@@ -285,37 +285,46 @@ docker-compose run --user $(id -u):$(id -g) backend bash
 
 ### Current State
 
-Genesis currently uses SQLite for data storage. The database code is in `shinka/database/dbase.py` and uses `sqlite3` module directly.
+Genesis now has PostgreSQL support infrastructure in place:
 
-### Future Migration
+- ✅ PostgreSQL 16 container configured
+- ✅ Database adapter layer (`shinka/database/adapter.py`)
+- ✅ PostgreSQL schema initialization (`docker/init-db.sql`)
+- ✅ Environment-based database selection
+- 🔧 Core Genesis code still uses SQLite directly
 
-To integrate PostgreSQL:
+**See [POSTGRES.md](POSTGRES.md) for detailed PostgreSQL integration documentation.**
 
-1. **Add PostgreSQL Adapter**:
-   - Add `psycopg2-binary==2.9.10` to `pyproject.toml`
-   - Create a database adapter layer to support both SQLite and PostgreSQL
+### Quick PostgreSQL Setup
 
-2. **Update Database Config**:
-   - Modify `shinka/database/dbase.py` to detect `DATABASE_URL` environment variable
-   - Implement PostgreSQL-specific SQL dialect handling
+The PostgreSQL database is automatically initialized when you start the containers:
 
-3. **Handle Schema Differences**:
-   - SQLite's JSON handling vs PostgreSQL's JSONB
-   - Auto-increment IDs (AUTOINCREMENT vs SERIAL)
-   - Transaction behavior differences
+```bash
+# Configure DATABASE_URL in .env
+DATABASE_URL=postgresql://genesis:password@postgres:5432/genesis
 
-4. **Migration Script**:
-   Create a script to migrate existing SQLite databases to PostgreSQL:
-   ```bash
-   docker-compose exec backend python scripts/migrate_to_postgres.py
-   ```
+# Start services
+docker-compose up -d
 
-5. **Testing**:
-   - Test all database operations
-   - Verify performance with large datasets
-   - Ensure thread safety with concurrent access
+# Verify PostgreSQL is running
+docker-compose exec postgres psql -U genesis -d genesis -c "\dt"
+```
 
-The PostgreSQL container is already configured and ready to use once the code migration is complete.
+### Migration Path
+
+The full PostgreSQL integration requires refactoring ~2000 lines in `shinka/database/dbase.py` to use the adapter layer. This is an ongoing effort. Current status:
+
+**Phase 1 (Complete)**: Foundation
+- Database adapter abstraction
+- PostgreSQL container setup
+- Schema initialization
+
+**Phase 2 (In Progress)**: Integration
+- Refactor `ProgramDatabase` to use adapter
+- Replace direct sqlite3 calls
+- Handle SQL dialect differences
+
+See [POSTGRES.md](POSTGRES.md) for the complete migration roadmap and contribution guidelines.
 
 ## Advanced Configuration
 

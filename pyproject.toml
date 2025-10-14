@@ -45,6 +45,7 @@ dependencies = [
     "adjustText",
     "markdown",
     "aiofiles",
+    "psycopg[binary]",
 ]
 
 [tool.setuptools]
