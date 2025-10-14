@@ -1,5 +1,7 @@
 # Repository Guidelines
 
+**Important: All pull requests should be opened against this repository: https://github.com/GeorgePearse/Genesis**
+
 ## Project Structure & Module Organization
 - `shinka/`: core Python package for evolution runners, job configs, and database utilities.
 - `configs/`: Hydra configuration presets; start new experiments by extending an existing YAML here.

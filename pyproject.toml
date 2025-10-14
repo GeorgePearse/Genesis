@@ -45,6 +45,7 @@ dependencies = [
     "markdown==3.8.2",
     "aiofiles==24.1.0",
     "e2b==2.2.0",
+    "psycopg[binary]==3.2.3",
 ]
 
 [tool.setuptools]
