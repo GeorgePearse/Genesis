@@ -8,24 +8,21 @@ repos:
         files: ^pyproject\.toml$
         pass_filenames: false
 
-  - repo: https://github.com/psf/black
-    rev: 22.12.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.0
     hooks:
-      - id: black
-        language_version: python3.12
+      # Run the linter.
+      - id: ruff
+        args: [ --fix ]
+      # Run the formatter.
+      - id: ruff-format
 
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
     hooks:
-      - id: isort
-        language_version: python3.12
-
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.1.1
-    hooks:
-      - id: flake8
-        language_version: python3.12
-        args: ['--max-line-length=120', '--extend-ignore=E203,W503']
+      - id: mypy
+        additional_dependencies: [types-requests, types-PyYAML, types-setuptools]
+        exclude: ^(examples|tests)/
 
   - repo: https://github.com/hadolint/hadolint
     rev: v2.12.0
