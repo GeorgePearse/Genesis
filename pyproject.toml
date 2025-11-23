@@ -50,7 +50,6 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["genesis"]
 script-files = ["genesis/genesis_launch", "genesis/genesis_visualize"]
 
 [tool.setuptools.packages.find]

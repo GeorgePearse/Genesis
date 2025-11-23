@@ -37,3 +37,59 @@
 ## Configuration & Secrets
 - Store API keys in `.env` (see `docs/getting_started.md`); never commit secrets or experiment artifacts.
 - For multi-node or Slurm runs, duplicate configs into `configs/custom/` and document cluster dependencies in the PR.
+
+## Merging Upstream Updates (Syncing with SakanaAI/ShinkaEvolve)
+
+The Genesis repository is a fork/derivative of [SakanaAI/ShinkaEvolve](https://github.com/SakanaAI/ShinkaEvolve). We maintain a different package name (`genesis` instead of `shinka`) and custom features (E2B integration, etc.), which requires care when merging upstream updates.
+
+**Workflow:**
+
+1.  **Configure Remote:** Ensure you have the upstream remote configured:
+    ```bash
+    git remote add upstream https://github.com/SakanaAI/ShinkaEvolve.git
+    ```
+
+2.  **Commit Local State:** **Crucial:** Ensure all your local changes are committed before merging. Git's rename detection relies on comparing the file content. If you have uncommitted changes (especially import renames), git might treat files as deleted/added instead of renamed, causing massive conflicts.
+
+3.  **Fetch and Merge:**
+    ```bash
+    git fetch upstream
+    git merge upstream/main
+    ```
+    *   Git usually detects the `shinka/` -> `genesis/` folder rename automatically if the file contents are similar enough.
+    *   If you see `CONFLICT (file location)`, git likely detected the rename but needs confirmation for new files.
+
+4.  **Resolve Conflicts:**
+    *   **New Upstream Files:** If upstream added a file in `shinka/new_file.py`, git might place it there. Move it to `genesis/new_file.py` using `git mv`.
+    *   **Imports:** Upstream changes will re-introduce `from shinka...` imports. You must revert these to `from genesis...` in conflict resolution.
+    *   **Config Defaults:** Be careful with `pyproject.toml` and `dbase.py`. Preserve our dependencies (e.g. `e2b`, `google-generativeai`) and config defaults (e.g. `db_path` optionality).
+
+5.  **Update Dependencies:**
+    ```bash
+    python3 -m pip install .
+    ```
+
+6.  **Verify:** Run a quick evolution task (e.g., `mask_to_seg_example`) to ensure the system works with the updates.
+
+## Language Support
+
+Genesis primarily orchestrates the evolution process in Python, but it can optimize code in any language (e.g., Rust, C++, CUDA) provided you supply a suitable evaluator.
+
+### Optimizing Rust, C++, or Other Compiled Languages
+
+To optimize a compiled language like Rust:
+
+1.  **Initial Program:** Create your `initial.rs` file.
+2.  **Evaluator Script:** Create a Python script (e.g., `evaluate.py`) that:
+    *   Accepts the path to the candidate code (e.g., `main.rs`).
+    *   Compiles the code (e.g., using `rustc` or `cargo build`).
+    *   Runs the binary against test cases.
+    *   Returns metrics (score, correctness) to Genesis via JSON or `run_genesis_eval`.
+3.  **Configuration:** Set `language: rust` in your task config. This ensures the LLM uses correct syntax highlighting and comments when generating patches.
+
+Example structure:
+```
+examples/rust_task/
+  initial.rs
+  evaluate.py  # Wraps rustc and execution
+```
