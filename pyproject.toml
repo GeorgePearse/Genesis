@@ -62,7 +62,7 @@ include = ["genesis", "genesis.*"]
 dev-dependencies = [
     "pytest==8.3.3",
     "ruff==0.8.0",
-    "mypy==1.13.0",
+    "pyright==1.1.389",
     "pre-commit==4.0.1",
 ]
 
@@ -71,10 +71,13 @@ line-length = 88
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "W"]  # E/F (flake8), I (isort), W (warnings)
-ignore = ["E203", "E501"]      # E203 (whitespace before :), E501 (line too long)
+select = ["E", "F", "I", "W"]
+ignore = ["E203", "E501"]
 
-[tool.mypy]
-python_version = "3.12"
-ignore_missing_imports = true
-check_untyped_defs = true
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+include = ["genesis", "examples"]
+exclude = ["**/node_modules", "**/__pycache__", "results"]
+typeCheckingMode = "basic"
+pythonVersion = "3.12"

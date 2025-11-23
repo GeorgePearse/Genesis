@@ -17,12 +17,11 @@ repos:
       # Run the formatter.
       - id: ruff-format
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.13.0
+  - repo: https://github.com/robertorocha/pyright-python
+    rev: v1.1.389
     hooks:
-      - id: mypy
+      - id: pyright
         additional_dependencies: [types-requests, types-PyYAML, types-setuptools]
-        exclude: ^(examples|tests)/
 
   - repo: https://github.com/hadolint/hadolint
     rev: v2.12.0
