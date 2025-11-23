@@ -3,7 +3,7 @@
 **Important: All pull requests should be opened against this repository: https://github.com/GeorgePearse/Genesis**
 
 ## Project Structure & Module Organization
-- `shinka/`: core Python package for evolution runners, job configs, and database utilities.
+- `genesis/`: core Python package for evolution runners, job configs, and database utilities.
 - `configs/`: Hydra configuration presets; start new experiments by extending an existing YAML here.
 - `tests/`: pytest suite covering edit strategies and evaluation tooling; mirror source layout when adding modules.
 - `examples/`: runnable task templates, including notebooks, to demonstrate common workflows.
@@ -14,7 +14,7 @@
 - `uv pip install -e .[dev]`: install the package with developer tooling.
 - `genesis_launch variant=circle_packing_example`: run a reference experiment via the CLI entrypoint.
 - `pytest`: execute the full unit test suite; use `pytest tests/test_edit_circle.py -k "smoke"` while iterating.
-- `black shinka tests && isort shinka tests && flake8 shinka tests`: format and lint before submitting.
+- `black genesis tests && isort genesis tests && flake8 genesis tests`: format and lint before submitting.
 
 ## Coding Style & Naming Conventions
 - Python 3.12+, 4-space indentation, and type hints for new public APIs.

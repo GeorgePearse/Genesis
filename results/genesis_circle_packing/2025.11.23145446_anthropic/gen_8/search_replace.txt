@@ -1,0 +1,62 @@
+<NAME>
+adaptive_circle_placement
+</NAME>
+
+<DESCRIPTION>
+This modification introduces an adaptive placement strategy for the circles, where the positions of the circles are adjusted based on their proximity to one another. This aims to reduce overlaps and maximize the sum of their radii. The adjustment is done iteratively, allowing circles to move away from each other if they are too close, which should improve the overall packing density and potentially increase the combined score.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    # Place smaller circles in an outer ring with adjusted sizes
+=======
+    # Place smaller circles in an outer ring with adjusted sizes and adaptive placement
+    for i in range(16):
+        angle = 2 * np.pi * i / 16
+        radius = 0.4 * (1 - (i % 2) * 0.1)  # Slightly smaller for alternate circles
+        centers[i + 9] = [0.5 + radius * np.cos(angle), 0.5 + radius * np.sin(angle)]
+
+    # Adaptive adjustment of positions based on proximity
+    for _ in range(100):  # Number of optimization iterations
+        radii = compute_max_radii(centers)
+        centers = optimize_positions(centers, radii)
+>>>>>>> REPLACE
+
+<DIFF>
+<<<<<<< SEARCH
+def compute_max_radii(centers):
+=======
+def optimize_positions(centers, radii):
+    """
+    Adjust the positions of circles based on their radii to prevent overlaps
+    and maintain proximity to the center.
+
+    Args:
+        centers: np.array of shape (n, 2) with (x, y) coordinates
+        radii: np.array of shape (n) with radii of circles
+
+    Returns:
+        Updated centers after optimization
+    """
+    n = centers.shape[0]
+
+    # Move circles towards the centroid of their neighboring circles
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                dist = np.linalg.norm(centers[i] - centers[j])
+                # If too close, adjust position away based on radius
+                if dist < (radii[i] + radii[j]):
+                    direction = (centers[i] - centers[j]) / dist
+                    adjustment = (radii[i] + radii[j] - dist) / 2
+                    centers[i] += adjustment * direction  # Push circle i away from j
+
+    return centers
+>>>>>>> REPLACE
+
+<DIFF>
+<<<<<<< SEARCH
+    return centers, radii
+=======
+    return centers, radii  # Return updated centers after optimization
+>>>>>>> REPLACE

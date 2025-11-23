@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-from shinka.core import EvolutionRunner, EvolutionConfig
-from shinka.database import DatabaseConfig
-from shinka.launch import LocalJobConfig
+from genesis.core import EvolutionRunner, EvolutionConfig
+from genesis.database import DatabaseConfig
+from genesis.launch import LocalJobConfig
 
 job_config = LocalJobConfig(eval_program_path="evaluate.py")
 

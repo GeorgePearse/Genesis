@@ -1,0 +1,102 @@
+# EVOLVE-BLOCK-START
+"""Adaptive circle packing with simulated annealing for n=26 circles"""
+
+import numpy as np
+
+def construct_packing():
+    """
+    Construct a specific arrangement of 26 circles in a unit square
+    that attempts to maximize the sum of their radii.
+
+    Returns:
+        Tuple of (centers, radii, sum_of_radii)
+        centers: np.array of shape (26, 2) with (x, y) coordinates
+        radii: np.array of shape (26) with radius of each circle
+        sum_of_radii: Sum of all radii
+    """
+    n = 26
+    centers = np.random.uniform(0.1, 0.9, size=(n, 2))
+    radii = np.ones(n) * 0.01  # Start with small radii
+
+    # Simulated annealing parameters
+    initial_temperature = 1.0
+    cooling_rate = 0.99
+    min_temperature = 0.01
+
+    temperature = initial_temperature
+
+    while temperature > min_temperature:
+        for _ in range(100):  # Number of iterations at each temperature
+            centers, radii = optimize_positions(centers, radii)
+        
+        temperature *= cooling_rate  # Cool down
+
+    return centers, radii
+
+
+def optimize_positions(centers, radii):
+    """
+    Adjust the positions of circles based on their radii to prevent overlaps
+    and maximize their sizes.
+
+    Args:
+        centers: np.array of shape (n, 2) with (x, y) coordinates
+        radii: np.array of shape (n) with radii of circles
+
+    Returns:
+        Updated centers and radii after optimization
+    """
+    n = centers.shape[0]
+    for i in range(n):
+        # Perturb the position slightly
+        perturbation = np.random.uniform(-0.01, 0.01, size=2)
+        new_center = centers[i] + perturbation
+
+        # Clip new center to stay within the unit square
+        new_center = np.clip(new_center, 0.01, 0.99)
+
+        # Calculate new radii based on the new center
+        new_radii = compute_max_radii(new_center, centers, radii)
+
+        # Accept new position if it improves the total sum of radii
+        if np.sum(new_radii) > np.sum(radii):
+            centers[i] = new_center
+            radii[i] = new_radii[i]
+
+    return centers, radii
+
+
+def compute_max_radii(center, centers, radii):
+    """
+    Compute the maximum possible radii for a given circle position
+    such that it doesn't overlap with others and stays within the unit square.
+
+    Args:
+        center: np.array of shape (2) with (x, y) coordinates of the circle
+        centers: np.array of shape (n, 2) with (x, y) coordinates of other circles
+        radii: np.array of shape (n) with radii of other circles
+
+    Returns:
+        np.array of shape (n) with radius of the circle at the given center
+    """
+    n = centers.shape[0]
+    max_radius = min(center[0], center[1], 1 - center[0], 1 - center[1])
+    for j in range(n):
+        if not np.array_equal(center, centers[j]):
+            dist = np.linalg.norm(center - centers[j])
+            # Adjust the maximum radius based on distance to other circles
+            max_radius = min(max_radius, dist / 2)
+
+    return np.array([max_radius] * n)
+
+
+# EVOLVE-BLOCK-END
+
+
+# This part remains fixed (not evolved)
+def run_packing():
+    """Run the circle packing constructor for n=26"""
+    centers, radii = construct_packing()
+    # Calculate the sum of radii
+    sum_radii = np.sum(radii)
+    return centers, radii, sum_radii

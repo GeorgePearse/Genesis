@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-Shinka Visualization CLI
+Genesis Visualization CLI
 
-Command-line interface for visualizing Shinka evolution results.
+Command-line interface for visualizing Genesis evolution results.
 """
 
 import os
 import sys
 
-# Add the parent directory to the Python path to ensure shinka can be imported
+# Add the parent directory to the Python path to ensure genesis can be imported
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from shinka.webui.visualization import main
+from genesis.webui.visualization import main
 
 if __name__ == "__main__":
     main()

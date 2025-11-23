@@ -1,9 +1,9 @@
 from typing import Optional, Tuple, List
 import logging
 from pathlib import Path
-from shinka.database import Program
-from shinka.llm import LLMClient
-from shinka.prompts import NOVELTY_SYSTEM_MSG, NOVELTY_USER_MSG
+from genesis.database import Program
+from genesis.llm import LLMClient
+from genesis.prompts import NOVELTY_SYSTEM_MSG, NOVELTY_USER_MSG
 
 logger = logging.getLogger(__name__)
 

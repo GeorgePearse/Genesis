@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional, Union
 from .apply_diff import write_git_diff, _mutable_ranges
-from shinka.llm import extract_between
+from genesis.llm import extract_between
 import logging
 
 logger = logging.getLogger(__name__)

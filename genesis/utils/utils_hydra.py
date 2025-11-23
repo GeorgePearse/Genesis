@@ -52,7 +52,7 @@ def build_cfgs_from_python(*launcher_args, **launcher_kwargs):
     hydra_overrides += [f"{k}={v}" for k, v in launcher_kwargs.items()]
     hydra_overrides = tag_global(hydra_overrides, global_list)
 
-    with initialize(version_base=None, config_path="../../configs", job_name="shinka"):
+    with initialize(version_base=None, config_path="../../configs", job_name="genesis"):
         cfg = compose(config_name="config", overrides=hydra_overrides)
 
     run_dir = pathlib.Path(cfg.output_dir)

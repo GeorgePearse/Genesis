@@ -3,13 +3,12 @@ import './About.css';
 export default function About() {
   return (
     <div className="about">
-      <h1>About ShinkaEvolve</h1>
+      <h1>About Genesis</h1>
       <section className="about-section">
-        <h2>What is ShinkaEvolve?</h2>
+        <h2>What is Genesis?</h2>
         <p>
-          ShinkaEvolve is an open-ended program evolution framework that applies
-          evolutionary computing principles to software development. The name
-          &quot;Shinka&quot; comes from the Japanese word for evolution (進化).
+          Genesis is an open-ended program evolution framework that applies
+          evolutionary computing principles to software development.
         </p>
       </section>
       <section className="about-section">

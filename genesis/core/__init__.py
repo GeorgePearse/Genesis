@@ -2,7 +2,7 @@ from .runner import EvolutionRunner, EvolutionConfig
 from .sampler import PromptSampler
 from .summarizer import MetaSummarizer
 from .novelty_judge import NoveltyJudge
-from .wrap_eval import run_shinka_eval
+from .wrap_eval import run_genesis_eval
 
 __all__ = [
     "EvolutionRunner",
@@ -10,5 +10,5 @@ __all__ = [
     "MetaSummarizer",
     "NoveltyJudge",
     "EvolutionConfig",
-    "run_shinka_eval",
+    "run_genesis_eval",
 ]

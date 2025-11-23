@@ -1,5 +1,5 @@
 evo_config:
-  _target_: shinka.core.EvolutionConfig
+  _target_: genesis.core.EvolutionConfig
   patch_types:
     - "diff"
     - "full"

@@ -1,0 +1,17 @@
+{
+    "mean_iou": 1.0,
+    "combined_score": 0.9964852291881494,
+    "ious": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+    ],
+    "execution_time_mean": 0.0003527167998981895,
+    "execution_time_std": 0.0005475944965531586,
+    "num_valid_runs": 5,
+    "num_invalid_runs": 0,
+    "all_validation_errors": [],
+    "time_factor": 0.9964852291881494
+}

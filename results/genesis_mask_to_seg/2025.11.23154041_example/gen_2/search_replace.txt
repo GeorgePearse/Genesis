@@ -1,0 +1,21 @@
+<NAME>
+add_noop_evolve_block_at_file_end
+</NAME>
+
+<DESCRIPTION>
+Because there are no EVOLVE-BLOCKs in the code, we cannot wrap the function body directly. As a workaround, this edit adds a dummy EVOLVE-BLOCK at the end of the file, which will allow future evolutionary edits to be demonstrated/tested in that block. This does not change the program's function, but enables the evolutionary editing process.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+
+```
+=======
+
+```
+# EVOLVE-BLOCK-START
+# (This EVOLVE-BLOCK is intentionally left empty for evolutionary edits.)
+# EVOLVE-BLOCK-END
+>>>>>>> REPLACE
+
+</DIFF>

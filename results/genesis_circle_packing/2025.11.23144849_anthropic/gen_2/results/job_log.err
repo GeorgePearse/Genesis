@@ -1,0 +1,41 @@
+Traceback (most recent call last):
+  File "/Users/georgepearse/Genesis/genesis/core/wrap_eval.py", line 100, in run_genesis_eval
+    module = load_program(program_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/georgepearse/Genesis/genesis/core/wrap_eval.py", line 29, in load_program
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1132, in get_code
+  File "<frozen importlib._bootstrap_external>", line 1190, in get_data
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/georgepearse/Genesis/results/genesis_circle_packing/2025.11.23144849_anthropic/gen_2/main.py'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/hydra/_internal/instantiate/_instantiate2.py", line 92, in _call_target
+    return _target_(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/georgepearse/Genesis/examples/circle_packing/evaluate.py", line 149, in main
+    metrics, correct, error_msg = run_genesis_eval(
+                                  ^^^^^^^^^^^^^^^^^
+  File "/Users/georgepearse/Genesis/genesis/core/wrap_eval.py", line 176, in run_genesis_eval
+    if all_run_results is not None:
+       ^^^^^^^^^^^^^^^
+UnboundLocalError: cannot access local variable 'all_run_results' where it is not associated with a value
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/georgepearse/Genesis/genesis/eval_hydra.py", line 68, in <module>
+    hydra.utils.instantiate(cfg.evaluate_function)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/hydra/_internal/instantiate/_instantiate2.py", line 226, in instantiate
+    return instantiate_node(
+           ^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/hydra/_internal/instantiate/_instantiate2.py", line 347, in instantiate_node
+    return _call_target(_target_, partial, args, kwargs, full_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/hydra/_internal/instantiate/_instantiate2.py", line 97, in _call_target
+    raise InstantiationException(msg) from e
+hydra.errors.InstantiationException: Error in call to target 'examples.circle_packing.evaluate.main':
+UnboundLocalError("cannot access local variable 'all_run_results' where it is not associated with a value")
+full_key: evaluate_function

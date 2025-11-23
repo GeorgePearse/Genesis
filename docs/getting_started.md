@@ -1,10 +1,11 @@
-# Getting Started with Shinka 🧬
+# Getting Started with Genesis 🧬
 
-Shinka is a framework that combines Large Language Models (LLMs) with evolutionary algorithms to drive scientific discovery. This guide will help you get started with installing, configuring, and running your first evolutionary experiments.
+Genesis is a framework that combines Large Language Models (LLMs) with evolutionary algorithms to drive scientific discovery. This guide will help you get started with installing, configuring, and running your first evolutionary experiments.
+
 
 ## Table of Contents
 
-1. [What is Shinka?](#what-is-shinka)
+1. [What is Genesis?](#what-is-genesis)
 2. [Installation](#installation)
 3. [Basic Usage](#basic-usage)
 4. [Examples](#examples)
@@ -12,9 +13,9 @@ Shinka is a framework that combines Large Language Models (LLMs) with evolutiona
 6. [Troubleshooting](#troubleshooting)
 7. [Next Steps](#next-steps)
 
-## What is Shinka?
+## What is Genesis?
 
-Shinka enables automated exploration and improvement of scientific code by:
+Genesis enables automated exploration and improvement of scientific code by:
 
 - **Evolutionary Search**: Maintains a population of programs that evolve over generations
 - **LLM-Powered Mutations**: Uses LLMs as intelligent mutation operators to suggest code improvements
@@ -49,20 +50,20 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 pip install uv
 ```
 
-#### Step 2: Clone and Install Shinka
+#### Step 2: Clone and Install Genesis
 
 ```bash
-git clone <shinka-repository-url>
-cd shinka
+git clone https://github.com/GeorgePearse/Genesis
+cd Genesis
 
-# Create virtual environment with Python 3.11
-uv venv --python 3.11
+# Create virtual environment with Python 3.12
+uv venv --python 3.12
 
 # Activate the environment
 source .venv/bin/activate  # On macOS/Linux
 # .venv\Scripts\activate   # On Windows
 
-# Install Shinka in development mode
+# Install Genesis in development mode
 uv pip install -e .
 ```
 
@@ -71,15 +72,15 @@ uv pip install -e .
 #### Step 1: Create Environment
 
 ```bash
-conda create -n shinka python=3.11
-conda activate shinka
+conda create -n genesis python=3.12
+conda activate genesis
 ```
 
 #### Step 2: Clone and Install
 
 ```bash
-git clone <shinka-repository-url>
-cd shinka
+git clone https://github.com/GeorgePearse/Genesis
+cd Genesis
 pip install -e .
 ```
 
@@ -97,11 +98,12 @@ ANTHROPIC_API_KEY=your-anthropic-key-here  # Optional
 
 ```bash
 # Test the CLI launcher
-shinka_launch --help
+genesis_launch --help
 
 # Test Python imports
-python -c "from shinka.core import EvolutionRunner; print('Installation successful!')"
+python -c "from genesis.core import EvolutionRunner; print('Installation successful!')"
 ```
+
 
 ### Advanced uv Features (Optional)
 
@@ -136,10 +138,10 @@ The easiest way to get started is using the Hydra-based CLI launcher:
 
 ```bash
 # Run circle packing example with default settings
-shinka_launch variant=circle_packing_example
+genesis_launch variant=circle_packing_example
 
 # Run with custom parameters
-shinka_launch \
+genesis_launch \
     task=circle_packing \
     database=island_small \
     evolution=small_budget \
@@ -152,9 +154,9 @@ shinka_launch \
 For more control, you can use the Python API directly:
 
 ```python
-from shinka.core import EvolutionRunner, EvolutionConfig
-from shinka.database import DatabaseConfig
-from shinka.launch import LocalJobConfig
+from genesis.core import EvolutionRunner, EvolutionConfig
+from genesis.database import DatabaseConfig
+from genesis.launch import LocalJobConfig
 
 # Configure the job execution environment
 job_config = LocalJobConfig(
@@ -209,10 +211,10 @@ examples/circle_packing/
 
 ```bash
 # Using CLI launcher (recommended)
-shinka_launch variant=circle_packing_example
+genesis_launch variant=circle_packing_example
 
 # Or with custom settings
-shinka_launch \
+genesis_launch \
     task=circle_packing \
     cluster=local \
     evo_config.num_generations=20 \
@@ -242,15 +244,15 @@ The `EVOLVE-BLOCK-START/END` markers define which parts of the code can be modif
 
 #### Understanding the Evaluation Script
 
-The `evaluate.py` script uses Shinka's `run_shinka_eval` function to test and score evolved solutions:
+The `evaluate.py` script uses Genesis's `run_genesis_eval` function (from the `genesis.core` module) to test and score evolved solutions:
 
 ```python
-from shinka.core import run_shinka_eval
+from genesis.core import run_genesis_eval
 
 def main(program_path: str, results_dir: str):
-    """Main evaluation function called by Shinka"""
+    """Main evaluation function called by Genesis"""
     
-    metrics, correct, error_msg = run_shinka_eval(
+    metrics, correct, error_msg = run_genesis_eval(
         program_path=program_path,
         results_dir=results_dir,
         experiment_fn_name="run_packing",        # Function to call in evolved code
@@ -297,9 +299,9 @@ def aggregate_metrics(results, results_dir):
     }
 ```
 
-**What run_shinka_eval Returns:**
+**What run_genesis_eval Returns:**
 
-The `run_shinka_eval` function returns three values:
+The `run_genesis_eval` function returns three values:
 
 1. **`metrics` (dict)**: Structured performance data
    - `combined_score`: Primary fitness value (higher = better)
@@ -384,7 +386,7 @@ uv pip install -e .
 # If using pip
 pip install -e .
 # Check Python path
-python -c "import shinka; print(shinka.__file__)"
+python -c "import genesis; print(genesis.__file__)"
 ```
 
 **2. API Key Issues**
@@ -432,9 +434,9 @@ conda env list
 conda run -n my_env python --version
 
 # Check if required packages are installed in target environment
-conda run -n my_env python -c "import shinka; print('OK')"
+conda run -n my_env python -c "import genesis; print('OK')"
 
-# Install shinka in specific conda environment
+# Install genesis in specific conda environment
 conda activate my_env
 pip install -e .
 conda deactivate
@@ -444,7 +446,7 @@ conda deactivate
 
 Enable verbose logging:
 ```bash
-shinka_launch variant=my_variant verbose=true
+genesis_launch variant=my_variant verbose=true
 ```
 
 ### Getting Help
@@ -455,7 +457,7 @@ shinka_launch variant=my_variant verbose=true
 
 ## Next Steps
 
-Now that you have Shinka running:
+Now that you have Genesis running:
 
 1. **Try the Examples**: Run the circle packing example to see evolution in action
 2. **Explore the WebUI**: See the [WebUI Guide](webui.md) to visualize how solutions evolve

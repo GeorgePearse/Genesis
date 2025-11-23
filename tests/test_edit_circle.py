@@ -1,4 +1,4 @@
-from shinka.edit import apply_diff_patch
+from genesis.edit import apply_diff_patch
 
 
 patch_str_1 = """

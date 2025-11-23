@@ -21,7 +21,7 @@ def result_feedback(result: Result) -> CaseResult:
 
 
 def main(program_path: str, results_dir: str, problem_id: str) -> None:
-    """Runs the evaluation using the shinka.eval utility."""
+    """Runs the evaluation using the genesis.eval utility."""
     print(f"Problem ID: {problem_id}")
     print(f"Evaluating program: {program_path}")
     print(f"Saving results to: {results_dir}")
@@ -180,7 +180,7 @@ def main(program_path: str, results_dir: str, problem_id: str) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Agent evaluation script using shinka.eval"
+        description="Agent evaluation script using genesis.eval"
     )
     parser.add_argument(
         "--program_path",

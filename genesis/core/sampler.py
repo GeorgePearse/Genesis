@@ -1,7 +1,7 @@
 from typing import List, Optional, Tuple
 import numpy as np
-from shinka.database import Program
-from shinka.prompts import (
+from genesis.database import Program
+from genesis.prompts import (
     construct_eval_history_msg,
     perf_str,
     format_text_feedback_section,
@@ -14,7 +14,7 @@ from shinka.prompts import (
     CROSS_ITER_MSG,
     get_cross_component,
 )
-from shinka.prompts.prompts_init import INIT_SYSTEM_MSG, INIT_USER_MSG
+from genesis.prompts.prompts_init import INIT_SYSTEM_MSG, INIT_USER_MSG
 import logging
 
 logger = logging.getLogger(__name__)

@@ -1,6 +1,6 @@
-# Shinka WebUI Guide 🎨
+# Genesis WebUI Guide 🎨
 
-The Shinka WebUI provides an interactive, real-time visualization of the evolutionary process, allowing you to monitor experiments, explore solution genealogies, and analyze performance metrics.
+The Genesis WebUI provides an interactive, real-time visualization of the evolutionary process, allowing you to monitor experiments, explore solution genealogies, and analyze performance metrics.
 
 ## Table of Contents
 
@@ -14,7 +14,7 @@ The Shinka WebUI provides an interactive, real-time visualization of the evoluti
 
 ## Overview
 
-The WebUI serves as a dashboard for monitoring Shinka evolution experiments, providing:
+The WebUI serves as a dashboard for monitoring Genesis evolution experiments, providing:
 
 - **Real-time Updates**: Live monitoring of ongoing experiments
 - **Evolution Tree**: Interactive visualization of solution genealogies
@@ -31,16 +31,16 @@ The WebUI serves as a dashboard for monitoring Shinka evolution experiments, pro
 
 ```bash
 # Start your evolution experiment
-shinka_launch variant=circle_packing_example
+genesis_launch variant=circle_packing_example
 
 # In another terminal, launch the WebUI
-shinka_visualize --port 8888 --open
+genesis_visualize --port 8888 --open
 
 # Or specify a results directory
-shinka_visualize results_20241201_120000/ --port 8888 --open
+genesis_visualize results_20241201_120000/ --port 8888 --open
 
 # Or target a specific database file
-shinka_visualize --db results_20241201_120000/evolution_db.sqlite --port 8888 --open
+genesis_visualize --db results_20241201_120000/evolution_db.sqlite --port 8888 --open
 
 # Open browser to http://localhost:8888 (if not auto-opened)
 ```
@@ -49,7 +49,7 @@ shinka_visualize --db results_20241201_120000/evolution_db.sqlite --port 8888 --
 
 ```bash
 # On remote machine (where experiment runs)
-shinka_visualize --port 8888
+genesis_visualize --port 8888
 
 # On local machine (create SSH tunnel)
 ssh -L 8888:localhost:8888 username@remote-host
@@ -66,16 +66,16 @@ The WebUI works seamlessly with both sync and async evolution runners:
 python run_evo_async.py  # Start async evolution
 
 # Launch WebUI (auto-detects database in current directory)
-shinka_visualize --open
+genesis_visualize --open
 
 # For sync experiments  
 python run_evo.py        # Start sync evolution
 
 # Launch WebUI with specific results directory
-shinka_visualize results_20241201_120000/ --open
+genesis_visualize results_20241201_120000/ --open
 
 # Or with specific database file
-shinka_visualize --db results_20241201_120000/evolution_db.sqlite --open
+genesis_visualize --db results_20241201_120000/evolution_db.sqlite --open
 ```
 
 ## Setup and Launch
@@ -91,27 +91,27 @@ The WebUI requires:
 
 #### Basic Launch
 ```bash
-shinka_visualize
+genesis_visualize
 ```
 
 #### Custom Port
 ```bash
-shinka_visualize --port 9000
+genesis_visualize --port 9000
 ```
 
 #### Custom Database Path
 ```bash
-shinka_visualize --db /path/to/evolution_db.sqlite
+genesis_visualize --db /path/to/evolution_db.sqlite
 ```
 
 #### Auto-open Browser
 ```bash
-shinka_visualize --open
+genesis_visualize --open
 ```
 
 #### Specify Results Directory
 ```bash
-shinka_visualize /path/to/results_directory/ --port 8888 --open
+genesis_visualize /path/to/results_directory/ --port 8888 --open
 ```
 
 ### Command Line Arguments
@@ -243,14 +243,14 @@ Monitor multiple experiments simultaneously:
 
 ```bash
 # Experiment 1 on port 8888
-shinka_visualize exp1/ --port 8888
+genesis_visualize exp1/ --port 8888
 
 # Experiment 2 on port 8889  
-shinka_visualize exp2/ --port 8889
+genesis_visualize exp2/ --port 8889
 
 # Or with specific database files
-shinka_visualize --db exp1/evolution_db.sqlite --port 8888
-shinka_visualize --db exp2/evolution_db.sqlite --port 8889
+genesis_visualize --db exp1/evolution_db.sqlite --port 8888
+genesis_visualize --db exp2/evolution_db.sqlite --port 8889
 
 # Access at http://localhost:8888 and http://localhost:8889
 ```
@@ -263,14 +263,14 @@ shinka_visualize --db exp2/evolution_db.sqlite --port 8889
 ```bash
 # Error: Cannot find evolution_db.sqlite
 # Solution: Specify database path explicitly
-shinka_visualize --db /full/path/to/evolution_db.sqlite
+genesis_visualize --db /full/path/to/evolution_db.sqlite
 ```
 
 #### 2. Port Already in Use
 ```bash
 # Error: Address already in use
 # Solution: Use different port
-shinka_visualize --port 9000
+genesis_visualize --port 9000
 ```
 
 #### 3. No Data Displayed
@@ -298,7 +298,7 @@ Enable verbose logging:
 
 ```bash
 # Launch with verbose output (check console for debug info)
-shinka_visualize --port 8888
+genesis_visualize --port 8888
 
 # The server provides detailed logging in the console
 ```
@@ -308,12 +308,12 @@ shinka_visualize --port 8888
 For large experiments with many generations:
 
 ```bash
-# For large experiments, the new shinka_visualize handles performance automatically
+# For large experiments, the new genesis_visualize handles performance automatically
 # Simply launch with your results directory
-shinka_visualize large_experiment_results/ --port 8888 --open
+genesis_visualize large_experiment_results/ --port 8888 --open
 
 # Or specify a specific database if needed
-shinka_visualize --db large_experiment_results/evolution_db.sqlite --port 8888
+genesis_visualize --db large_experiment_results/evolution_db.sqlite --port 8888
 ```
 
 ## Advanced Usage
@@ -350,7 +350,7 @@ import subprocess
 import time
 
 # Start WebUI server
-subprocess.Popen(['shinka_visualize', '--port', '8888'])
+subprocess.Popen(['genesis_visualize', '--port', '8888'])
 time.sleep(2)  # Wait for server to start
 
 # Embed in notebook

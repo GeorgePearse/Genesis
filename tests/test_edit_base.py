@@ -1,5 +1,5 @@
-from shinka.edit import apply_diff_patch, apply_full_patch
-from shinka.edit.apply_diff import (
+from genesis.edit import apply_diff_patch, apply_full_patch
+from genesis.edit.apply_diff import (
     _find_indented_match,
     _apply_indentation_to_replace,
     _strip_trailing_whitespace,

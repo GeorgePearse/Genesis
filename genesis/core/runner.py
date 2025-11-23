@@ -12,25 +12,25 @@ from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass, field, asdict
 from subprocess import Popen
-from shinka.launch import JobScheduler, JobConfig, ProcessWithLogging
-from shinka.database import ProgramDatabase, DatabaseConfig, Program
-from shinka.llm import (
+from genesis.launch import JobScheduler, JobConfig, ProcessWithLogging
+from genesis.database import ProgramDatabase, DatabaseConfig, Program
+from genesis.llm import (
     LLMClient,
     extract_between,
     EmbeddingClient,
     BanditBase,
     AsymmetricUCB,
 )
-from shinka.edit import (
+from genesis.edit import (
     apply_diff_patch,
     apply_full_patch,
     summarize_diff,
     redact_immutable,
 )
-from shinka.core.sampler import PromptSampler
-from shinka.core.summarizer import MetaSummarizer
-from shinka.core.novelty_judge import NoveltyJudge
-from shinka.logo import print_gradient_logo
+from genesis.core.sampler import PromptSampler
+from genesis.core.summarizer import MetaSummarizer
+from genesis.core.novelty_judge import NoveltyJudge
+from genesis.logo import print_gradient_logo
 
 FOLDER_PREFIX = "gen"
 

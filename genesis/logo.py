@@ -1,7 +1,7 @@
 import os
 
 
-shinka_ascii = """  @@@@@@@@@@@@@@@@@@@@@      ░██████╗██╗░░██╗██╗███╗░░██╗██╗░░██╗░█████╗░
+genesis_ascii = """  @@@@@@@@@@@@@@@@@@@@@      ░██████╗██╗░░██╗██╗███╗░░██╗██╗░░██╗░█████╗░
   @                   @      ██╔════╝██║░░██║██║████╗░██║██║░██╔╝██╔══██╗
   @          @        @      ╚█████╗░███████║██║██╔██╗██║█████═╝░███████║
   @    @@   @@  @@    @      ░╚═══██╗██╔══██║██║██║╚████║██╔═██╗░██╔══██║
@@ -65,10 +65,10 @@ def print_gradient_logo(start_color=(255, 100, 50), end_color=(100, 200, 255)):
     if os.getenv("NO_COLOR") or not (
         hasattr(os.sys.stdout, "isatty") and os.sys.stdout.isatty()
     ):
-        print(shinka_ascii)
+        print(genesis_ascii)
         return
 
-    lines = shinka_ascii.split("\n")
+    lines = genesis_ascii.split("\n")
     num_lines = len(lines)
 
     # Create gradient colors for each line

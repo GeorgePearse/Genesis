@@ -3,9 +3,9 @@ import './Home.css';
 export default function Home() {
   return (
     <div className="home">
-      <h1>Welcome to ShinkaEvolve</h1>
+      <h1>Welcome to Genesis</h1>
       <p className="home-description">
-        ShinkaEvolve is an open-ended program evolution system that enables
+        Genesis is an open-ended program evolution system that enables
         continuous improvement and adaptation of software systems.
       </p>
       <div className="home-features">

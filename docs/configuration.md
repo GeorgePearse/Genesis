@@ -1,6 +1,8 @@
-# Shinka Configuration Guide ⚙️
+# Genesis Configuration Guide ⚙️
 
-This guide covers the comprehensive configuration system in Shinka, including all parameters, file structures, and advanced configuration patterns.
+This guide covers the comprehensive configuration system in Genesis, including all parameters, file structures, and advanced configuration patterns.
+
+> **Note**: Genesis is based on [Shinka AI](https://github.com/shinkadotai/shinka) and maintains compatibility with the original implementation. The core package is named `genesis` internally.
 
 ## Table of Contents
 
@@ -22,7 +24,7 @@ Controls the core evolutionary algorithm parameters:
 
 ```yaml
 evo_config:
-  _target_: shinka.core.EvolutionConfig
+  _target_: genesis.core.EvolutionConfig
   num_generations: 20              # Number of evolution generations
   max_parallel_jobs: 1             # Maximum parallel evaluations
   max_patch_attempts: 10           # Max attempts to generate valid patches
@@ -55,7 +57,7 @@ Manages the evolutionary database and island topology:
 
 ```yaml
 db_config:
-  _target_: shinka.database.DatabaseConfig
+  _target_: genesis.database.DatabaseConfig
   db_path: "evolution_db.sqlite"   # SQLite database path
   
   # Island Configuration
@@ -81,20 +83,20 @@ Defines the execution environment and resource requirements:
 #### Local Execution
 ```yaml
 job_config:
-  _target_: shinka.launch.LocalJobConfig
-  eval_program_path: "shinka/evaluate.py"
+  _target_: genesis.launch.LocalJobConfig
+  eval_program_path: "genesis/evaluate.py"
 ```
 
 #### Slurm Cluster Execution
 ```yaml
 job_config:
-  _target_: shinka.launch.SlurmCondaJobConfig
+  _target_: genesis.launch.SlurmCondaJobConfig
   modules:                         # Environment modules
     - "cuda/12.4"
     - "cudnn/8.9.7"
     - "hpcx/2.20"
-  eval_program_path: "shinka/utils/eval_hydra.py"
-  conda_env: "shinka"              # Conda environment name
+  eval_program_path: "genesis/utils/eval_hydra.py"
+  conda_env: "genesis"              # Conda environment name
   time: "01:00:00"                 # Maximum job runtime
   cpus: 4                          # CPU cores per job
   gpus: 1                          # GPUs per job
@@ -114,7 +116,7 @@ evaluate_function:
 
 # Job configuration for this task
 distributed_job_config:
-  _target_: shinka.launch.SlurmCondaJobConfig
+  _target_: genesis.launch.SlurmCondaJobConfig
   # ... resource requirements ...
 
 # Evolution settings specific to this task
@@ -126,7 +128,7 @@ evo_config:
   init_program_path: "examples/my_task/initial.py"
   job_type: "slurm_conda"
 
-exp_name: "shinka_my_task"
+exp_name: "genesis_my_task"
 ```
 
 ## Configuration Parameters
@@ -166,7 +168,7 @@ exp_name: "shinka_my_task"
 | `cpus` | int | 4 | CPU cores per job |
 | `gpus` | int | 0 | GPUs per job |
 | `mem` | str | `"8G"` | Memory per job |
-| `conda_env` | str | `"shinka"` | Conda environment name |
+| `conda_env` | str | `"genesis"` | Conda environment name |
 | `modules` | list | `[]` | Environment modules to load |
 
 ## Pre-configured Variants
@@ -265,7 +267,7 @@ variant_suffix: "_custom"
 
 Launch with:
 ```bash
-shinka_launch variant=my_custom_variant
+genesis_launch variant=my_custom_variant
 ```
 
 ### Method 2: Command Line Overrides
@@ -273,7 +275,7 @@ shinka_launch variant=my_custom_variant
 Override parameters directly on the command line:
 
 ```bash
-shinka_launch \
+genesis_launch \
     task=circle_packing \
     database=island_large \
     evolution=medium_budget \
@@ -296,8 +298,8 @@ evaluate_function:
   results_dir: ???
 
 distributed_job_config:
-  _target_: shinka.launch.LocalJobConfig
-  eval_program_path: "shinka/utils/eval_hydra.py"
+  _target_: genesis.launch.LocalJobConfig
+  eval_program_path: "genesis/utils/eval_hydra.py"
 
 evo_config:
   task_sys_msg: |
@@ -313,7 +315,7 @@ evo_config:
   init_program_path: "examples/my_optimization/initial.py"
   job_type: "local"
 
-exp_name: "shinka_my_optimization"
+exp_name: "genesis_my_optimization"
 ```
 
 ## Advanced Configuration Patterns

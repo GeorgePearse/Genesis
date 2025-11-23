@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import argparse
-from shinka.core import EvolutionRunner, EvolutionConfig
-from shinka.database import DatabaseConfig
-from shinka.launch import LocalJobConfig
+from genesis.core import EvolutionRunner, EvolutionConfig
+from genesis.database import DatabaseConfig
+from genesis.launch import LocalJobConfig
 import ale_bench
 
 # Standings: https://atcoder.jp/contests/ahc046/standings

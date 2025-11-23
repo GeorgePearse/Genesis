@@ -25,7 +25,7 @@ import webbrowser
 from pathlib import Path
 from typing import Optional, Dict, Any, Tuple
 
-from shinka.database import DatabaseConfig, ProgramDatabase
+from genesis.database import DatabaseConfig, ProgramDatabase
 
 # We'll use a simple text-to-PDF approach instead of complex dependencies
 WEASYPRINT_AVAILABLE = False
@@ -548,8 +548,8 @@ class DatabaseRequestHandler(http.server.SimpleHTTPRequestHandler):
 </head>
 <body>
     <div class="header-container">
-        {f'<img src="{logo_data_uri}" alt="Shinka Logo" class="header-logo">' if logo_data_uri else ""}
-        <h1 class="header-title">ShinkaEvolve Meta-Scratchpad: \
+        {f'<img src="{logo_data_uri}" alt="Genesis Logo" class="header-logo">' if logo_data_uri else ""}
+        <h1 class="header-title">Genesis Meta-Scratchpad: \
 {generation}</h1>
     </div>
     {html_content}
@@ -723,7 +723,7 @@ class DatabaseRequestHandler(http.server.SimpleHTTPRequestHandler):
     def _get_logo_base64(self) -> str:
         """Get the Shinka logo as base64 data URI."""
         try:
-            # Look for favicon.png in the main shinka package directory
+            # Look for favicon.png in the main genesis package directory
             logo_path = os.path.join(os.path.dirname(__file__), "favicon.png")
             if os.path.exists(logo_path):
                 with open(logo_path, "rb") as f:
@@ -766,7 +766,7 @@ def create_handler_factory(search_root):
 
 def start_server(port: int, search_root: str, db_path: Optional[str] = None):
     """Start the HTTP server."""
-    # Change to the webui directory inside the shinka package to serve static files
+    # Change to the webui directory inside the genesis package to serve static files
     webui_dir = os.path.dirname(__file__)
     webui_dir = os.path.abspath(webui_dir)
 
@@ -791,7 +791,7 @@ def start_server(port: int, search_root: str, db_path: Optional[str] = None):
 
 
 def main():
-    """Main entry point for shinka_visualize command."""
+    """Main entry point for genesis_visualize command."""
     description = "Serve the Shinka visualization UI for evolution results."
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(

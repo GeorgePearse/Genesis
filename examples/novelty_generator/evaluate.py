@@ -9,7 +9,7 @@ from typing import Optional, Tuple, Callable
 
 import numpy as np
 
-from shinka.llm import LLMClient
+from genesis.llm import LLMClient
 from lm_judge_prompt import make_lm_input_and_output_processors
 
 

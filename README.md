@@ -8,15 +8,16 @@ Integrating e2b (or similar), and modal (for GPU code) would be a meaningful upg
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-%3E%3D3.12-blue" />
-  <a href="https://github.com/SakanaAI/ShinkaEvolve/blob/master/LICENSE.md"><img src="https://img.shields.io/badge/license-Apache2.0-blue.svg" /></a>
   <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" /></a>
   <a href="http://arxiv.org/abs/2509.19349"><img src="http://img.shields.io/badge/paper-arxiv.2509.19349-B31B1B.svg" /></a>
   <a href="https://genesis.ai"><img src="https://img.shields.io/badge/website-genesis.ai-blue" /></a>
 </p>
 
-> **Note**: This repository is based on [ShinkaEvolve](https://github.com/SakanaAI/ShinkaEvolve) by Sakana AI (~90% of the codebase). We are running platform experiments on top of their excellent work, exploring new execution backends and deployment strategies.
+[`Genesis`](https://genesis.ai) is a framework that combines Large Language Models (LLMs) with evolutionary algorithms to drive scientific discovery. By leveraging the creative capabilities of LLMs and the optimization power of evolutionary search, `Genesis` enables automated exploration and improvement of scientific code. 
 
-[`Genesis`](https://genesis.ai) is a framework that combines Large Language Models (LLMs) with evolutionary algorithms to drive scientific discovery. By leveraging the creative capabilities of LLMs and the optimization power of evolutionary search, `Genesis` enables automated exploration and improvement of scientific code. The system is inspired by the [AI Scientist](https://sakana.ai/ai-scientist/), [AlphaEvolve](https://deepmind.google/discover/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/), [Darwin Goedel Machine](https://sakana.ai/dgm/), and [ShinkaEvolve](https://arxiv.org/abs/2509.19349): It maintains a population of programs that evolve over generations, with an ensemble of LLMs acting as intelligent mutation operators that suggest code improvements.
+> **Note**: This implementation is based on and extends [Shinka AI](https://github.com/shinkadotai/shinka), an open-source platform for LLM-driven code evolution. We are grateful to the original authors for their foundational work.
+
+The system is inspired by the [AI Scientist](https://sakana.ai/ai-scientist/), [AlphaEvolve](https://deepmind.google/discover/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/), and [Darwin Goedel Machine](https://sakana.ai/dgm/). It maintains a population of programs that evolve over generations, with an ensemble of LLMs acting as intelligent mutation operators that suggest code improvements.
 
 The framework supports **parallel evaluation of candidates** locally, on a Slurm cluster, or in cloud sandboxes. It maintains an archive of successful solutions, enabling knowledge transfer between different evolutionary islands. `Genesis` is particularly well-suited for scientific tasks where there is a verifier available and the goal is to optimize performance metrics while maintaining code correctness and readability.
 
@@ -303,24 +304,17 @@ For detailed WebUI documentation, see the [WebUI Guide](docs/webui.md).
 
 ## Related Open-Source Projects 🧑‍🔧
 
-- [ShinkaEvolve](https://github.com/SakanaAI/ShinkaEvolve): The original framework by Sakana AI that Genesis was forked from (~90% of the codebase)
+- **[Shinka AI](https://github.com/shinkadotai/shinka)**: The original implementation that Genesis is based on - a platform for LLM-driven program evolution
 - [OpenEvolve](https://github.com/codelion/openevolve): An open-source implementation of AlphaEvolve
 - [LLM4AD](https://github.com/Optima-CityU/llm4ad): A Platform for Algorithm Design with Large Language Model
 
+## Acknowledgments 🙏
+
+Genesis is built upon the excellent work of the [Shinka AI](https://github.com/shinkadotai/shinka) project. We extend our gratitude to the original authors and contributors for creating such a robust foundation for LLM-driven code evolution.
+
 ## Citation ✍️
 
-If you use `Genesis` in your research, please cite the original ShinkaEvolve paper:
-
-```
-@article{lange2025shinka,
-  title={ShinkaEvolve: Towards Open-Ended And Sample-Efficient Program Evolution},
-  author={Lange, Robert Tjarko and Imajuku, Yuki and Cetin, Edoardo},
-  journal={arXiv preprint arXiv:2509.19349},
-  year={2025}
-}
-```
-
-And reference this Genesis platform:
+If you use `Genesis` in your research, please cite:
 
 ```
 @misc{genesis2025,
@@ -330,3 +324,5 @@ And reference this Genesis platform:
   year={2025}
 }
 ```
+
+And please also consider citing the original Shinka AI work that this is based on.

@@ -56,7 +56,7 @@ The Docker setup includes:
 ### Backend Service
 
 The backend container runs:
-- Genesis evolution framework (`shinka` Python package)
+- Genesis evolution framework (`genesis` Python package)
 - Web UI visualization server (port 8000)
 - Evolution experiments via `genesis_launch` command
 
@@ -89,7 +89,7 @@ The Docker Compose setup mounts the following directories:
 |-----------|---------------|---------|
 | `./data` | `/app/data` | SQLite databases and metadata |
 | `./results` | `/app/results` | Experiment results and outputs |
-| `./shinka` | `/app/shinka` | Source code (dev mode only) |
+| `./genesis` | `/app/genesis` | Source code (dev mode only) |
 | `./configs` | `/app/configs` | Configuration files (dev mode only) |
 | `./examples` | `/app/examples` | Example experiments (dev mode only) |
 
@@ -101,7 +101,7 @@ The default `docker-compose.yml` mounts source code for live development:
 
 ```yaml
 volumes:
-  - ./shinka:/app/shinka
+  - ./genesis:/app/genesis
   - ./configs:/app/configs
   - ./examples:/app/examples
 ```
@@ -119,7 +119,7 @@ volumes:
   - ./results:/app/results
 
   # Mount source code for development (comment out for production)
-  # - ./shinka:/app/shinka
+  # - ./genesis:/app/genesis
   # - ./configs:/app/configs
   # - ./examples:/app/examples
 ```
@@ -288,7 +288,7 @@ docker-compose run --user $(id -u):$(id -g) backend bash
 Genesis now has PostgreSQL support infrastructure in place:
 
 - ✅ PostgreSQL 16 container configured
-- ✅ Database adapter layer (`shinka/database/adapter.py`)
+- ✅ Database adapter layer (`genesis/database/adapter.py`)
 - ✅ PostgreSQL schema initialization (`docker/init-db.sql`)
 - ✅ Environment-based database selection
 - 🔧 Core Genesis code still uses SQLite directly
@@ -312,7 +312,7 @@ docker-compose exec postgres psql -U genesis -d genesis -c "\dt"
 
 ### Migration Path
 
-The full PostgreSQL integration requires refactoring ~2000 lines in `shinka/database/dbase.py` to use the adapter layer. This is an ongoing effort. Current status:
+The full PostgreSQL integration requires refactoring ~2000 lines in `genesis/database/dbase.py` to use the adapter layer. This is an ongoing effort. Current status:
 
 **Phase 1 (Complete)**: Foundation
 - Database adapter abstraction

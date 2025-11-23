@@ -2,9 +2,9 @@ from typing import List, Optional, Tuple
 import logging
 import json
 from pathlib import Path
-from shinka.database import Program
-from shinka.llm import LLMClient
-from shinka.prompts import (
+from genesis.database import Program
+from genesis.llm import LLMClient
+from genesis.prompts import (
     construct_individual_program_msg,
     META_STEP1_SYSTEM_MSG,
     META_STEP1_USER_MSG,
@@ -299,7 +299,7 @@ class MetaSummarizer:
 
         # Format best program information
         if best_program:
-            from shinka.prompts import construct_individual_program_msg
+            from genesis.prompts import construct_individual_program_msg
 
             best_program_info = construct_individual_program_msg(
                 best_program,
@@ -339,7 +339,7 @@ class MetaSummarizer:
 
         # Format best program information
         if best_program:
-            from shinka.prompts import construct_individual_program_msg
+            from genesis.prompts import construct_individual_program_msg
 
             best_program_info = construct_individual_program_msg(
                 best_program,

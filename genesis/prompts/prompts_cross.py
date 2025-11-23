@@ -1,7 +1,7 @@
 import random
 from typing import List
 
-from shinka.database import Program
+from genesis.database import Program
 from .prompts_base import perf_str
 
 

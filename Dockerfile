@@ -17,7 +17,7 @@ COPY pyproject.toml ./
 COPY README.md ./
 
 # Copy application code
-COPY shinka/ ./shinka/
+COPY genesis/ ./genesis/
 COPY configs/ ./configs/
 COPY examples/ ./examples/
 COPY tests/ ./tests/
@@ -38,4 +38,4 @@ ENV GENESIS_DATA_DIR=/app/data
 ENV GENESIS_RESULTS_DIR=/app/results
 
 # Default command (can be overridden in docker-compose)
-CMD ["python", "-m", "shinka.launch_hydra"]
+CMD ["python", "-m", "genesis.launch_hydra"]

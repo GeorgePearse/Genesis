@@ -54,7 +54,7 @@ services:
       - ./results:/app/results
 
       # Mount source code for development (comment out for production)
-      - ./shinka:/app/shinka
+      - ./genesis:/app/genesis
       - ./configs:/app/configs
       - ./examples:/app/examples
     ports:
@@ -65,7 +65,7 @@ services:
     networks:
       - genesis-network
     restart: unless-stopped
-    command: ["python", "-m", "shinka.webui.visualization", "--port", "8000"]
+    command: ["python", "-m", "genesis.webui.visualization", "--port", "8000"]
 
 volumes:
   postgres_data:

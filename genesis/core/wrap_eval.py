@@ -51,7 +51,7 @@ def save_json_results(
     print(f"Metrics saved to {metrics_file}")
 
 
-def run_shinka_eval(
+def run_genesis_eval(
     program_path: str,
     results_dir: str,
     experiment_fn_name: str,

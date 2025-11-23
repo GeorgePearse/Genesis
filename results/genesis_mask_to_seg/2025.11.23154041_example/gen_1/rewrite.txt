@@ -1,0 +1,40 @@
+import cv2
+import numpy as np
+from typing import List
+
+# EVOLVE-BLOCK-START
+
+def run_conversion(mask: np.ndarray) -> List[np.ndarray]:
+    """
+    Converts a binary mask to a list of polygons.
+
+    Args:
+        mask: Binary mask (numpy array of shape (H, W), dtype=uint8/bool)
+              where non-zero values are the object.
+
+    Returns:
+        List of polygons, where each polygon is an np.ndarray of shape (N, 2)
+        representing (x, y) coordinates.
+    """
+    # Stage 1: Normalize mask to uint8 and binarize
+    if mask.dtype != np.uint8:
+        mask_proc = mask.astype(np.uint8)
+    else:
+        mask_proc = mask
+    if mask_proc.max() > 1:
+        mask_proc = np.where(mask_proc > 127, 255, 0).astype(np.uint8)
+
+    # Stage 2: Find contours
+    contours, _ = cv2.findContours(mask_proc, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Stage 3: Format polygons
+    polygons = []
+    for cnt in contours:
+        if cnt.shape[0] >= 3:
+            poly = cnt.squeeze(axis=1)
+            if poly.ndim == 1:
+                poly = poly[np.newaxis, :]
+            polygons.append(poly)
+    return polygons
+
+# EVOLVE-BLOCK-END

@@ -2,18 +2,20 @@
 
 This document describes the PostgreSQL integration for the Genesis Evolution Platform.
 
+> **Note**: Genesis is based on [Shinka AI](https://github.com/shinkadotai/shinka) and maintains the original `genesis` package structure internally.
+
 ## Overview
 
 Genesis now supports PostgreSQL as a database backend in addition to SQLite. The PostgreSQL support is implemented through Docker Compose and includes:
 
-1. Database adapter layer (`shinka/database/adapter.py`)
+1. Database adapter layer (`genesis/database/adapter.py`)
 2. PostgreSQL initialization script (`docker/init-db.sql`)
 3. Docker Compose configuration with PostgreSQL service
 4. Environment variable configuration for database selection
 
 ## Current Status
 
-**⚠️ Work in Progress**: This is an initial implementation that provides the foundation for PostgreSQL support. The core Genesis codebase (`shinka/database/dbase.py`) still uses SQLite directly for most operations.
+**⚠️ Work in Progress**: This is an initial implementation that provides the foundation for PostgreSQL support. The core Genesis codebase (`genesis/database/dbase.py`) still uses SQLite directly for most operations.
 
 ### What Works
 
@@ -35,10 +37,10 @@ Genesis now supports PostgreSQL as a database backend in addition to SQLite. The
 
 ### Database Adapter Layer
 
-The `DatabaseAdapter` abstract class in `shinka/database/adapter.py` provides a unified interface:
+The `DatabaseAdapter` abstract class in `genesis/database/adapter.py` provides a unified interface:
 
 ```python
-from shinka.database.adapter import get_database_adapter
+from genesis.database.adapter import get_database_adapter
 
 # Automatically selects adapter based on environment
 adapter = get_database_adapter(
@@ -158,7 +160,7 @@ The PostgreSQL schema is defined in `docker/init-db.sql`:
 
 To contribute to PostgreSQL integration:
 
-1. **Understand the adapter pattern**: Review `shinka/database/adapter.py`
+1. **Understand the adapter pattern**: Review `genesis/database/adapter.py`
 2. **Identify SQLite-specific code**: Look for `sqlite3` imports and SQL dialect specifics in `dbase.py`
 3. **Refactor incrementally**: Replace direct database calls with adapter methods
 4. **Test thoroughly**: Ensure both SQLite and PostgreSQL work
@@ -168,8 +170,8 @@ To contribute to PostgreSQL integration:
 
 | File | Purpose | Status |
 |------|---------|--------|
-| `shinka/database/adapter.py` | Database abstraction layer | ✅ Complete |
-| `shinka/database/dbase.py` | Core database operations | 🔧 Needs refactoring |
+| `genesis/database/adapter.py` | Database abstraction layer | ✅ Complete |
+| `genesis/database/dbase.py` | Core database operations | 🔧 Needs refactoring |
 | `docker/init-db.sql` | PostgreSQL schema | ✅ Complete |
 | `docker-compose.yml` | Container orchestration | ✅ Complete |
 | `pyproject.toml` | Dependencies (psycopg) | ✅ Complete |

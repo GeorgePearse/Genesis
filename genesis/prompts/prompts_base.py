@@ -1,5 +1,5 @@
 from typing import List, Dict
-from shinka.database import Program
+from genesis.database import Program
 
 
 BASE_SYSTEM_MSG = (

@@ -6,7 +6,7 @@ export default function Header() {
     <header className="header">
       <div className="header-content">
         <h1 className="header-title">
-          <Link to="/">ShinkaEvolve</Link>
+          <Link to="/">Genesis</Link>
         </h1>
         <nav className="header-nav">
           <Link to="/" className="nav-link">

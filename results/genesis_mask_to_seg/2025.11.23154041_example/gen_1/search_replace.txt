@@ -1,0 +1,53 @@
+<NAME>
+insert_evolve_block_marker_only
+</NAME>
+
+<DESCRIPTION>
+This edit places an EVOLVE-BLOCK marker immediately after the function docstring and before any other code, and ends the block just before the function return, to create an editable region for legal future edits. No logic is changed.
+</DESCRIPTION>
+
+<DIFF>
+<<<<<<< SEARCH
+    """
+    # Ensure mask is uint8
+    if mask.dtype != np.uint8:
+        mask = mask.astype(np.uint8)
+
+    # Find contours
+    # cv2.RETR_EXTERNAL retrieves only the extreme outer contours
+    # cv2.CHAIN_APPROX_SIMPLE compresses horizontal, vertical, and diagonal segments
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    polygons = []
+    for cnt in contours:
+        if len(cnt) >= 3:  # A polygon must have at least 3 points
+            # cnt has shape (N, 1, 2), we want (N, 2)
+            polygon = cnt.squeeze(axis=1)
+            polygons.append(polygon)
+
+    return polygons
+
+=======
+    """
+    # EVOLVE-BLOCK-START
+    # Ensure mask is uint8
+    if mask.dtype != np.uint8:
+        mask = mask.astype(np.uint8)
+
+    # Find contours
+    # cv2.RETR_EXTERNAL retrieves only the extreme outer contours
+    # cv2.CHAIN_APPROX_SIMPLE compresses horizontal, vertical, and diagonal segments
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    polygons = []
+    for cnt in contours:
+        if len(cnt) >= 3:  # A polygon must have at least 3 points
+            # cnt has shape (N, 1, 2), we want (N, 2)
+            polygon = cnt.squeeze(axis=1)
+            polygons.append(polygon)
+
+    return polygons
+    # EVOLVE-BLOCK-END
+>>>>>>> REPLACE
+
+</DIFF>

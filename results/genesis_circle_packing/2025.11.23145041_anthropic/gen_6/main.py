@@ -1,0 +1,74 @@
+# EVOLVE-BLOCK-START
+"""Dynamic and adaptive circle packing for n=26 circles"""
+
+import numpy as np
+
+def initialize_centers(n):
+    """Initialize centers dynamically for n circles."""
+    centers = np.zeros((n, 2))
+    for i in range(n):
+        angle = 2 * np.pi * i / n
+        radius = (1 - 0.03) * (i // 9 + 1) / (n // 9)
+        centers[i] = [0.5 + radius * np.cos(angle), 0.5 + radius * np.sin(angle)]
+    return np.clip(centers, 0.01, 0.99)
+
+def compute_max_radii(centers):
+    """Dynamic computation of the maximum possible radii."""
+    n = centers.shape[0]
+    radii = np.ones(n)
+    
+    for i in range(n):
+        x, y = centers[i]
+        # Limit by distance to the square borders
+        radii[i] = min(x, y, 1 - x, 1 - y)
+
+        # Limit by distance to other circles
+        for j in range(n):
+            if i == j: continue
+            dist = np.linalg.norm(centers[i] - centers[j])
+            if dist < 1e-5:  # Prevent collision
+                radii[i] *= 0.5  # Reduce size to avoid overlap
+
+            if radii[i] + radii[j] > dist:
+                scale = dist / (radii[i] + radii[j])
+                radii[i] *= scale
+                radii[j] *= scale
+
+    return radii
+
+def adjust_positions(centers, radii):
+    """Iteratively adjust positions based on computed radii."""
+    for _ in range(10):  # Number of iterations for stabilization
+        for i in range(len(centers)):
+            x, y = centers[i]
+            for j in range(len(centers)):
+                if i == j: continue
+                dist = np.linalg.norm(centers[i] - centers[j])
+                if dist < radii[i] + radii[j]:  # Check if circles overlap
+                    # Move apart
+                    angle = np.arctan2(y - centers[j][1], x - centers[j][0])
+                    move_distance = (radii[i] + radii[j] - dist) / 2
+                    centers[i][0] += move_distance * np.cos(angle) * 0.5
+                    centers[i][1] += move_distance * np.sin(angle) * 0.5
+
+            # Ensure circles stay within bounds
+            centers[i] = np.clip(centers[i], radii[i], 1 - radii[i])
+
+def construct_packing():
+    """Construct a specific arrangement of 26 circles in a unit square."""
+    n = 26
+    centers = initialize_centers(n)
+    radii = compute_max_radii(centers)
+    adjust_positions(centers, radii)
+    return centers, radii
+
+# EVOLVE-BLOCK-END
+
+
+# This part remains fixed (not evolved)
+def run_packing():
+    """Run the circle packing constructor for n=26"""
+    centers, radii = construct_packing()
+    # Calculate the sum of radii
+    sum_radii = np.sum(radii)
+    return centers, radii, sum_radii

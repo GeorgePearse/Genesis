@@ -14,7 +14,7 @@ from .parents import CombinedParentSelector
 from .inspirations import CombinedContextSelector
 from .islands import CombinedIslandManager
 from .display import DatabaseDisplay
-from shinka.llm.embedding import EmbeddingClient
+from genesis.llm.embedding import EmbeddingClient
 
 logger = logging.getLogger(__name__)
 

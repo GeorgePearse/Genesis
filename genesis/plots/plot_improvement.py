@@ -3,7 +3,7 @@ import pandas as pd
 from typing import Optional, Tuple, List
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
-from shinka.utils import get_path_to_best_node
+from genesis.utils import get_path_to_best_node
 import matplotlib.transforms as transforms
 
 

@@ -3,7 +3,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import hydra
 from omegaconf import DictConfig, OmegaConf
-from shinka.core import EvolutionRunner
+from genesis.core import EvolutionRunner
 
 
 @hydra.main(config_path="../configs", config_name="config", version_base=None)

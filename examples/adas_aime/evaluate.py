@@ -1,7 +1,7 @@
 import argparse
 from typing import Dict, Any, List, Tuple
 import numpy as np
-from shinka.core import run_shinka_eval
+from genesis.core import run_genesis_eval
 
 
 def construct_text_feedback(all_df) -> str:
@@ -94,7 +94,7 @@ def main(
     num_experiment_runs: int = 5,
     max_calls: int = 10,
 ) -> None:
-    """Runs the evaluation using the shinka.eval utility."""
+    """Runs the evaluation using the genesis.eval utility."""
     print(f"Evaluating program: {program_path}")
     print(f"Saving results to: {results_dir}")
     print(f"Using model: {model_name}")
@@ -111,7 +111,7 @@ def main(
         max_calls=max_calls,
     )
 
-    metrics, correct, error = run_shinka_eval(
+    metrics, correct, error = run_genesis_eval(
         program_path=program_path,
         results_dir=results_dir,
         experiment_fn_name="run_experiment",
@@ -134,7 +134,7 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Agent evaluation script using shinka.eval"
+        description="Agent evaluation script using genesis.eval"
     )
     parser.add_argument(
         "--program_path",

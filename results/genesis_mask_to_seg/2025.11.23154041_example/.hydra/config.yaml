@@ -1,0 +1,63 @@
+verbose: false
+results_dir: results
+run_name: ${now:%Y.%m.%d}${now:%H%M%S}
+output_dir: ${results_dir}/${exp_name}/${run_name}${variant_suffix}
+db_config:
+  _target_: genesis.database.DatabaseConfig
+  db_path: evolution_db.sqlite
+  num_islands: 2
+  archive_size: 20
+  exploitation_ratio: 0.2
+  elite_selection_ratio: 0.3
+  num_archive_inspirations: 4
+  num_top_k_inspirations: 2
+  migration_interval: 10
+  migration_rate: 0.1
+  island_elitism: true
+evo_config:
+  _target_: genesis.core.EvolutionConfig
+  patch_types:
+  - diff
+  - full
+  patch_type_probs:
+  - 0.5
+  - 0.5
+  num_generations: 20
+  max_parallel_jobs: 1
+  max_patch_attempts: 10
+  llm_models:
+  - gpt-4.1
+  llm_dynamic_selection: null
+  embedding_model: text-embedding-3-small
+  results_dir: ${output_dir}
+  task_sys_msg: "You are an expert in computer vision and performance optimization.\n\
+    Your task is to optimize a function `run_conversion(mask)` that converts a binary\
+    \ mask to a list of polygons.\n\nThe goal is to maximize the Intersection over\
+    \ Union (IoU) while minimizing execution time.\nThe current implementation uses\
+    \ OpenCV contours, but there may be faster or more accurate ways, \nor ways to\
+    \ simplify the polygons to improve speed without losing too much accuracy.\n\n\
+    Consider:\n1. Downsampling the mask before processing.\n2. Approximating contours\
+    \ with fewer points.\n3. Using different algorithms for contour finding.\n4. Optimizing\
+    \ the numpy operations.\n\nThe input `mask` is a numpy uint8 array.\nThe output\
+    \ should be a list of numpy arrays, each shape (N, 2).\n"
+  language: python
+  init_program_path: examples/mask_to_seg/initial.py
+  job_type: local
+exp_name: genesis_mask_to_seg
+evaluate_function:
+  _target_: examples.mask_to_seg.evaluate.main
+  program_path: ???
+  results_dir: ???
+distributed_job_config:
+  _target_: genesis.launch.SlurmCondaJobConfig
+  eval_program_path: genesis/eval_hydra.py
+  conda_env: genesis
+  modules: []
+  time: 00:10:00
+  cpus: 1
+  gpus: 0
+  mem: 8G
+job_config:
+  _target_: genesis.launch.LocalJobConfig
+  eval_program_path: ${distributed_job_config.eval_program_path}
+variant_suffix: _example
