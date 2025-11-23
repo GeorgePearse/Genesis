@@ -17,11 +17,14 @@ repos:
       # Run the formatter.
       - id: ruff-format
 
-  - repo: https://github.com/robertorocha/pyright-python
-    rev: v1.1.389
+  - repo: local
     hooks:
-      - id: pyright
-        additional_dependencies: [types-requests, types-PyYAML, types-setuptools]
+      - id: zuban
+        name: zuban
+        entry: zuban check
+        language: system
+        types: [python]
+        pass_filenames: false
 
   - repo: https://github.com/hadolint/hadolint
     rev: v2.12.0

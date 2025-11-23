@@ -62,7 +62,7 @@ include = ["genesis", "genesis.*"]
 dev-dependencies = [
     "pytest==8.3.3",
     "ruff==0.8.0",
-    "pyright==1.1.389",
+    "zuban==0.2.3",
     "pre-commit==4.0.1",
 ]
 
@@ -74,10 +74,7 @@ target-version = "py312"
 select = ["E", "F", "I", "W"]
 ignore = ["E203", "E501"]
 
-[tool.pyright]
-venvPath = "."
-venv = ".venv"
+[tool.zuban]
+target-version = "py3.12"
 include = ["genesis", "examples"]
-exclude = ["**/node_modules", "**/__pycache__", "results"]
-typeCheckingMode = "basic"
-pythonVersion = "3.12"
+exclude = ["results", "tests"]
