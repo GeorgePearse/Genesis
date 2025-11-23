@@ -46,11 +46,15 @@ dependencies = [
     "e2b>=1.0.0",
     "e2b-code-interpreter>=0.0.11",
     "psycopg[binary]==3.2.3",
+    "google-generativeai",
 ]
 
 [tool.setuptools]
 packages = ["genesis"]
 script-files = ["genesis/genesis_launch", "genesis/genesis_visualize"]
+
+[tool.setuptools.packages.find]
+include = ["genesis", "genesis.*"]
 
 [tool.setuptools.package-data]
 "*" = ["*"]
