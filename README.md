@@ -1,4 +1,3 @@
-Integrating e2b (or similar), and modal (for GPU code) would be a meaningful upgrade, so that you could further parallelize execution, do need to check how the existing other agents work though. Might already do similar
 <h1 align="center">
   <a href="docs/genesis-logo.png?raw=true">
     <img src="docs/genesis-logo.png?raw=true" width="180" style="border-radius: 50%; background-color: white; padding: 20px;" />
@@ -31,6 +30,7 @@ The framework supports **parallel evaluation of candidates** locally, on a Slurm
 | 📓 **[Tutorial Notebook](examples/genesis_tutorial.ipynb)** | Interactive walkthrough of Genesis features | Hands-on examples, configuration, best practices |
 | ⚙️ **[Configuration](docs/configuration.md)** | Comprehensive configuration reference | All config options, optimization settings, advanced features |
 | 🎨 **[WebUI](docs/webui.md)** | Interactive visualization and monitoring | Real-time tracking, result analysis, debugging tools |
+| 🗺️ **[Roadmap](ROADMAP.md)** | Future plans and language support | Supported languages, execution backends, planned features |
 
 ## Installation & Quick Start 🚀
 
