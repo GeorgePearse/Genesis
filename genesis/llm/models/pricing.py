@@ -15,6 +15,10 @@ CLAUDE_MODELS = {
         "input_price": 3.0 / M,
         "output_price": 15.0 / M,
     },
+    "claude-3-5-sonnet-latest": {
+        "input_price": 3.0 / M,
+        "output_price": 15.0 / M,
+    },
     "claude-3-opus-20240229": {
         "input_price": 15.0 / M,
         "output_price": 75.0 / M,

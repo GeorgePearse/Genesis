@@ -1,9 +1,13 @@
 import logging
+import sys
 import time
 import asyncio
 from dataclasses import dataclass, asdict, field
 from typing import Optional, Dict, Any, Tuple, Union, List
 from concurrent.futures import ThreadPoolExecutor
+
+# Use the current Python executable for portability
+PYTHON_EXECUTABLE = sys.executable
 from .local import submit as submit_local, monitor as monitor_local
 from .local import ProcessWithLogging
 from .slurm import (
@@ -11,7 +15,17 @@ from .slurm import (
     submit_conda as submit_slurm_conda,
     monitor as monitor_slurm,
 )
-from shinka.utils import parse_time_to_seconds
+from .e2b import (
+    submit as submit_e2b,
+    submit_with_files as submit_e2b_with_files,
+    monitor as monitor_e2b,
+    get_job_status as get_e2b_job_status,
+    download_results as download_e2b_results,
+    cleanup_sandbox as cleanup_e2b_sandbox,
+    cancel_job as cancel_e2b_job,
+    E2B_JOBS,
+)
+from genesis.utils import parse_time_to_seconds
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +82,25 @@ class SlurmCondaJobConfig(JobConfig):
             self.modules = []
 
 
+@dataclass
+class E2BJobConfig(JobConfig):
+    """Configuration for E2B cloud sandbox jobs"""
+
+    template: str = "base"
+    timeout: int = 300  # Sandbox timeout in seconds
+    dependencies: Optional[List[str]] = None  # Pip packages to install
+    additional_files: Optional[Dict[str, str]] = None  # sandbox_path -> local_path
+    env_vars: Optional[Dict[str, str]] = None  # Environment variables to set
+
+    def __post_init__(self):
+        if self.dependencies is None:
+            self.dependencies = []
+        if self.additional_files is None:
+            self.additional_files = {}
+        if self.env_vars is None:
+            self.env_vars = {}
+
+
 class JobScheduler:
     def __init__(
         self,
@@ -76,6 +109,7 @@ class JobScheduler:
             LocalJobConfig,
             SlurmDockerJobConfig,
             SlurmCondaJobConfig,
+            E2BJobConfig,
         ],
         verbose: bool = False,
         max_workers: int = 4,
@@ -89,10 +123,12 @@ class JobScheduler:
             self.monitor = monitor_local
         elif self.job_type in ["slurm_docker", "slurm_conda"]:
             self.monitor = monitor_slurm
+        elif self.job_type == "e2b":
+            self.monitor = monitor_e2b
         else:
             raise ValueError(
                 f"Unknown job type: {job_type}. "
-                f"Must be 'local', 'slurm_docker', or 'slurm_conda'"
+                f"Must be 'local', 'slurm_docker', 'slurm_conda', or 'e2b'"
             )
 
     def _build_command(self, exec_fname_t: str, results_dir_t: str) -> List[str]:
@@ -107,6 +143,17 @@ class JobScheduler:
                 "--results_dir",
                 results_dir_t,
             ]
+        elif self.job_type == "e2b":
+            # E2B uses a different command structure handled in e2b.py
+            # Return a placeholder command - actual execution is different
+            cmd = [
+                "python",
+                "evaluate.py",
+                "--program_path",
+                "main.py",
+                "--results_dir",
+                "results",
+            ]
         else:
             # For local jobs, check if conda environment is specified
             if (
@@ -120,7 +167,7 @@ class JobScheduler:
                     "run",
                     "-n",
                     self.config.conda_env,
-                    "python",
+                    PYTHON_EXECUTABLE,
                     f"{self.config.eval_program_path}",
                     "--program_path",
                     f"{exec_fname_t}",
@@ -129,7 +176,7 @@ class JobScheduler:
                 ]
             else:
                 cmd = [
-                    "python",
+                    PYTHON_EXECUTABLE,
                     f"{self.config.eval_program_path}",
                     "--program_path",
                     f"{exec_fname_t}",
@@ -180,10 +227,25 @@ class JobScheduler:
                 self.config.modules,
                 verbose=self.verbose,
             )
+        elif self.job_type == "e2b":
+            assert isinstance(self.config, E2BJobConfig)
+            job_id = submit_e2b_with_files(
+                log_dir=results_dir_t,
+                exec_fname=exec_fname_t,
+                eval_program_path=self.config.eval_program_path or "evaluate.py",
+                additional_files=self.config.additional_files,
+                timeout=self.config.timeout,
+                template=self.config.template,
+                verbose=self.verbose,
+                dependencies=self.config.dependencies,
+                env_vars=self.config.env_vars,
+            )
         else:
             raise ValueError(f"Unknown job type: {self.job_type}")
 
-        if isinstance(job_id, str):
+        if self.job_type == "e2b":
+            results = monitor_e2b(job_id, results_dir_t, verbose=self.verbose)
+        elif isinstance(job_id, str):
             results = monitor_slurm(job_id, results_dir_t)
         else:
             results = monitor_local(job_id, results_dir_t)
@@ -234,6 +296,19 @@ class JobScheduler:
                 self.config.modules,
                 verbose=self.verbose,
             )
+        elif self.job_type == "e2b":
+            assert isinstance(self.config, E2BJobConfig)
+            return submit_e2b_with_files(
+                log_dir=results_dir_t,
+                exec_fname=exec_fname_t,
+                eval_program_path=self.config.eval_program_path or "evaluate.py",
+                additional_files=self.config.additional_files,
+                timeout=self.config.timeout,
+                template=self.config.template,
+                verbose=self.verbose,
+                dependencies=self.config.dependencies,
+                env_vars=self.config.env_vars,
+            )
         raise ValueError(f"Unknown job type: {self.job_type}")
 
     def check_job_status(self, job) -> bool:
@@ -245,6 +320,15 @@ class JobScheduler:
                 status = get_job_status(job.job_id)
                 return status != ""
             return False  # Should not happen with slurm
+        elif self.job_type == "e2b":
+            # E2B jobs are synchronous - they complete during submit
+            # Check if job exists in registry and sandbox is alive
+            if isinstance(job.job_id, str) and job.job_id.startswith("e2b-"):
+                status = get_e2b_job_status(job.job_id)
+                if status is None:
+                    return False  # Job not found
+                return status != ""  # Empty string means completed
+            return False
         else:
             if isinstance(job.job_id, ProcessWithLogging):
                 if (
@@ -298,6 +382,14 @@ class JobScheduler:
         if self.job_type in ["slurm_docker", "slurm_conda"]:
             if isinstance(job_id, str):
                 return monitor_slurm(job_id, results_dir, verbose=self.verbose)
+        elif self.job_type == "e2b":
+            if isinstance(job_id, str) and job_id.startswith("e2b-"):
+                # Download results and clean up sandbox
+                download_e2b_results(job_id, verbose=self.verbose)
+                cleanup_e2b_sandbox(job_id, verbose=self.verbose)
+                from genesis.utils import load_results
+
+                return load_results(results_dir)
         else:
             if isinstance(job_id, ProcessWithLogging):
                 job_id.wait()
@@ -356,6 +448,9 @@ class JobScheduler:
                             ["scancel", job_id], capture_output=True, text=True
                         )
                         return result.returncode == 0
+                elif self.job_type == "e2b":
+                    if isinstance(job_id, str) and job_id.startswith("e2b-"):
+                        return cancel_e2b_job(job_id, verbose=self.verbose)
                 else:
                     # For local jobs, kill the process
                     if isinstance(job_id, ProcessWithLogging):
