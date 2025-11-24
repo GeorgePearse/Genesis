@@ -206,6 +206,82 @@ Uses evolutionary Genetic Improvement to refine LLM-generated code using test ca
 
 ---
 
+## Optimization & Black-Box Search
+
+### Large Language Models as Optimizers (OPRO)
+**Paper**: [Large Language Models as Optimizers](https://arxiv.org/pdf/2309.03409) (ICLR 2024)
+Proposes "Optimization by PROmpting," where the LLM iteratively generates new solutions from the natural language history of past solutions and their scores, effectively treating the LLM as the optimizer itself.
+
+### Language Model Crossover (LMX)
+**Paper**: [Language Model Crossover: Variation through Few-Shot Prompting](https://arxiv.org/pdf/2302.12170) (2023)
+Introduces a variation operator based on few-shot prompting to semantically "crossover" parent strings via an LLM, showing strong performance in text-based evolutionary tasks.
+
+### EvoLLM
+**Paper**: [Large Language Models As Evolution Strategies](https://arxiv.org/pdf/2402.18381) (2024)
+Explores using LLMs to replace traditional Gaussian mutation and crossover operators in Evolution Strategies (ES) for black-box optimization tasks.
+
+### Quality-Diversity through AI Feedback (QDAIF)
+**Paper**: [Quality-Diversity through AI Feedback](https://arxiv.org/pdf/2310.13032v4) (NeurIPS Workshop 2023)
+Replaces the human or simulator in Quality-Diversity search with an AI model (like an LLM or VLM) to evaluate both the "quality" and "diversity" of creative artifacts.
+
+### OptiMUS
+**Paper**: [OptiMUS: Optimization Modeling Using MIP Solvers and Large Language Models](https://arxiv.org/pdf/2310.06116) (2023)
+Combines LLMs with mixed-integer programming (MIP) solvers, where the LLM formulates the optimization model from natural language and the solver finds the optimal solution.
+
+---
+
+## Prompt Evolution
+
+### Promptbreeder
+**Paper**: [Promptbreeder: Self-Referential Self-Improvement Via Prompt Evolution](https://arxiv.org/pdf/2309.16797) (2023)
+A self-improving system that evolves both the task-prompts and the "mutation-prompts" that modify them, enabling an open-ended evolutionary loop for prompt optimization.
+
+### EvoPrompt
+**Paper**: [Connecting Large Language Models with Evolutionary Algorithms Yields Powerful Prompt Optimizers](https://arxiv.org/pdf/2309.08532) (ICLR 2024)
+Connects LLMs with evolutionary algorithms to optimize discrete prompts by generating a population of candidate prompts and evolving them based on performance metrics.
+
+### Genetic Prompt Search (GPS)
+**Paper**: [GPS: Genetic Prompt Search for Efficient Few-shot Learning](https://arxiv.org/pdf/2210.17041) (EMNLP 2022)
+Applies genetic algorithms to automatically search for high-performing few-shot prompts for classification tasks, outperforming manual engineering.
+
+### GrIPS
+**Paper**: [GrIPS: Gradient-free, Edit-based Instruction Search for Prompting Large Language Models](https://arxiv.org/pdf/2203.07281) (EACL 2023)
+A gradient-free, edit-based search method for instructions that iteratively improves prompts by making character-level and word-level edits.
+
+---
+
+## Model Merging & Architecture Search
+
+### Evolutionary Model Merge
+**Paper**: [Evolutionary Optimization of Model Merging Recipes](https://www.nature.com/articles/s42256-024-00975-8) (Nature Machine Intelligence, 2025)
+Applies evolutionary search to discover optimal "recipes" (weights and layer permutations) for merging multiple Large Language Models, significantly outperforming manual merging strategies.
+
+### AutoBERT-Zero
+**Paper**: [AutoBERT-Zero: Evolving BERT Backbone from Scratch](https://arxiv.org/pdf/2107.07445) (AAAI 2022)
+Uses evolutionary search to discover effective BERT-like architectures from primitive operations without relying on human-designed backbones or heuristics.
+
+### LiteTransformerSearch
+**Paper**: [LiteTransformerSearch: Training-free Neural Architecture Search for Efficient Language Models](https://arxiv.org/pdf/2203.02094) (NeurIPS 2022)
+A training-free neural architecture search method for efficient language models that estimates performance without full training.
+
+---
+
+## Reinforcement Learning & Reward Design
+
+### Eureka
+**Paper**: [Eureka: Human-Level Reward Design via Coding Large Language Models](https://arxiv.org/pdf/2310.12931) (ICLR 2024)
+Uses Coding LLMs to evolutionary optimize reward functions for Reinforcement Learning, enabling agents to learn complex dexterous skills (like pen-spinning) that were previously unsolvable.
+
+### OpenELM
+**Paper**: [The OpenELM Library: Leveraging Progress in Language Models for Novel Evolutionary Algorithms](https://arxiv.org/pdf/2404.16906) (2024)
+An open-source library that leverages LLMs for novel evolutionary algorithms, specifically focusing on code generation and maintaining diversity in the population.
+
+### Evolution through Large Models (ELM)
+**Paper**: [Evolution through Large Models](https://arxiv.org/pdf/2206.08896) (2022)
+The precursor to OpenELM, demonstrating that LLMs can act as intelligent mutation operators in an open-ended evolutionary loop, generating increasingly complex programs.
+
+---
+
 ## Self-Improving Systems
 
 ### SICA: Self-Improving Coding Agent (ICLR 2025)
