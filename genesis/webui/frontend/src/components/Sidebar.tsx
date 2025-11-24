@@ -65,7 +65,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         loadDatabase(result.path);
       }
     }
-  }, [state.selectedTask, state.selectedResult]);
+  }, [state.selectedTask, state.selectedResult, results, loadDatabase]);
 
   const handleTaskSelect = (task: string) => {
     dispatch({ type: 'SET_SELECTED_TASK', payload: task });
@@ -192,14 +192,14 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
             />
           </button>
           {analysisOpen && (
-            <div className="mt-2 space-y-0.5">
+            <div className="mt-2 space-y-1">
               {analysisOptions.map((option) => {
                 const Icon = option.icon;
                 return (
                   <button
                     key={option.name}
                     onClick={() => setActiveTab(option.name)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                       activeTab === option.name
                         ? 'bg-blue-600 text-white'
                         : 'hover:bg-gray-800 text-gray-400 hover:text-gray-200'
@@ -230,14 +230,14 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
             />
           </button>
           {viewOpen && (
-            <div className="mt-2 space-y-0.5">
+            <div className="mt-2 space-y-1">
               {viewOptions.map((option) => {
                 const Icon = option.icon;
                 return (
                   <button
                     key={option.name}
                     onClick={() => setActiveTab(option.name)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                       activeTab === option.name
                         ? 'bg-blue-600 text-white'
                         : 'hover:bg-gray-800 text-gray-400 hover:text-gray-200'
