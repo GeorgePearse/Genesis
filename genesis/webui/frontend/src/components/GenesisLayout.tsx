@@ -13,7 +13,7 @@ export default function GenesisLayout() {
   }, [loadDatabases]);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 flex">
+    <div className="h-screen bg-gray-950 text-gray-100 flex overflow-hidden">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <MainContent activeTab={activeTab} />
     </div>
