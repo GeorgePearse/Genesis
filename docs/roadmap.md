@@ -109,6 +109,7 @@ See `examples/mask_to_seg_rust/` for a complete Rust example.
 - [ ] **OptiLLM Integration** - Integrate [OptiLLM](https://github.com/algorithmicsuperintelligence/optillm) to improve LLM outputs with inference time compute strategies (CoT, Best-of-N, etc.)
 - [ ] **AgentEx Integration** - Integrate [Scale AgentEx](https://github.com/scaleapi/scale-agentex) for automated experimentation and hyperparameter optimization of agent configurations
 - [ ] **Letta Memory Integration** - Integrate [Letta](https://github.com/letta-ai/letta) as an alternative memory system for long-term state management and knowledge retention across evolution generations
+- [ ] **Meta-Strategy Experimentation** - Enable automated experimentation across entirely different evolutionary strategies (e.g., comparing Island Model vs. MAP-Elites vs. FunSearch) to dynamically discover the optimal search strategy for a given problem domain
 - [ ] **Advanced Search & Logging** - Implement a robust search engine and comprehensive logging system.
   
   **Proposed Architecture:**

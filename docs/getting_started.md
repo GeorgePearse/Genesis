@@ -467,6 +467,10 @@ genesis_launch variant=my_variant verbose=true
 
 For deep analysis of evolutionary runs, enabling comprehensive logging is essential. Future versions of Genesis will include a robust search engine (e.g., vector database, elasticsearch) to trace LLM reasoning chains and allow you to search through the entire history of "what the LLMs were actually thinking" across all generations.
 
+### Meta-Strategy Experimentation
+
+We are working on features to allow automated experimentation across entirely different evolutionary strategies (not just parameter tuning). This will enable users to compare approaches like standard Island Models, MAP-Elites, and FunSearch-style evolution to find the best fit for their specific domain.
+
 ## Next Steps
 
 Now that you have Genesis running:
