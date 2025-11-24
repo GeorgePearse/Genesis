@@ -114,11 +114,11 @@ export default function ClustersView() {
                     }
                 ]}
                 layout={{
-                    title: '2D PCA',
+                    title: { text: '2D PCA' },
                     autosize: true,
                     margin: { t: 30, l: 30, r: 10, b: 30 },
-                    xaxis: { title: 'PC1' },
-                    yaxis: { title: 'PC2', scaleanchor: 'x' },
+                    xaxis: { title: { text: 'PC1' } },
+                    yaxis: { title: { text: 'PC2' }, scaleanchor: 'x' },
                     paper_bgcolor: '#f8f9fa',
                     plot_bgcolor: '#f8f9fa'
                 }}
@@ -149,13 +149,13 @@ export default function ClustersView() {
                     }
                 ]}
                 layout={{
-                    title: '3D PCA',
+                    title: { text: '3D PCA' },
                     autosize: true,
                     margin: { t: 30, l: 0, r: 0, b: 0 },
                     scene: {
-                        xaxis: { title: 'PC1' },
-                        yaxis: { title: 'PC2' },
-                        zaxis: { title: 'PC3' }
+                        xaxis: { title: { text: 'PC1' } },
+                        yaxis: { title: { text: 'PC2' } },
+                        zaxis: { title: { text: 'PC3' } }
                     },
                     paper_bgcolor: '#f8f9fa'
                 }}

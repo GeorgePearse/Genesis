@@ -1,0 +1,275 @@
+import { useState, useEffect } from 'react';
+import {
+  ChevronDown,
+  ChevronRight,
+  Code2,
+  GitBranch,
+  Activity,
+  Layers,
+  Globe,
+  Route,
+  Database,
+  Cpu,
+  FileCode,
+  GitCompare,
+  BarChart3,
+  Brain,
+  Search,
+  Zap,
+} from 'lucide-react';
+import { useGenesis } from '../context/GenesisContext';
+
+interface SidebarProps {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+}
+
+const analysisOptions = [
+  { name: 'Tree', icon: GitBranch },
+  { name: 'Programs', icon: Code2 },
+  { name: 'Metrics', icon: BarChart3 },
+  { name: 'Embeddings', icon: Layers },
+  { name: 'Clusters', icon: Activity },
+  { name: 'Islands', icon: Globe },
+  { name: 'LLM Posterior', icon: Brain },
+  { name: 'Path → Best', icon: Route },
+];
+
+const viewOptions = [
+  { name: 'Meta', icon: Database },
+  { name: 'Pareto Front', icon: Activity },
+  { name: 'Scratchpad', icon: FileCode },
+  { name: 'Node', icon: Cpu },
+  { name: 'Code', icon: Code2 },
+  { name: 'Diff', icon: GitCompare },
+  { name: 'Evaluation', icon: BarChart3 },
+  { name: 'LLM Result', icon: Brain },
+];
+
+export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
+  const { state, dispatch, loadDatabase } = useGenesis();
+  const [sidebarSection, setSidebarSection] = useState('analysis');
+  const [taskOpen, setTaskOpen] = useState(false);
+  const [resultOpen, setResultOpen] = useState(false);
+
+  const tasks = Object.keys(state.tasksAndResults).sort();
+  const results = state.selectedTask
+    ? state.tasksAndResults[state.selectedTask] || []
+    : [];
+
+  // Load database when both task and result are selected
+  useEffect(() => {
+    if (state.selectedTask && state.selectedResult) {
+      const result = results.find((r) => r.name === state.selectedResult);
+      if (result) {
+        loadDatabase(result.path);
+      }
+    }
+  }, [state.selectedTask, state.selectedResult]);
+
+  const handleTaskSelect = (task: string) => {
+    dispatch({ type: 'SET_SELECTED_TASK', payload: task });
+    setTaskOpen(false);
+    // Auto-select first result if available
+    const taskResults = state.tasksAndResults[task] || [];
+    if (taskResults.length > 0) {
+      dispatch({ type: 'SET_SELECTED_RESULT', payload: taskResults[0].name });
+    }
+  };
+
+  const handleResultSelect = (resultName: string) => {
+    dispatch({ type: 'SET_SELECTED_RESULT', payload: resultName });
+    setResultOpen(false);
+  };
+
+  return (
+    <div className="w-72 bg-gray-900 border-r border-gray-800 flex flex-col">
+      {/* Logo/Title */}
+      <div className="px-5 py-6 border-b border-gray-800">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="p-2 bg-blue-600 rounded-lg">
+            <Zap className="w-5 h-5 text-white" />
+          </div>
+          <h1 className="text-xl font-semibold text-white">Genesis</h1>
+        </div>
+        <p className="text-sm text-gray-500">Open-Ended Program Evolution</p>
+      </div>
+
+      {/* Task and Result Dropdowns */}
+      <div className="px-5 py-5 space-y-4 border-b border-gray-800">
+        {/* Task Dropdown */}
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Task
+          </label>
+          <div className="relative">
+            <button
+              onClick={() => setTaskOpen(!taskOpen)}
+              className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-800 hover:bg-gray-750 transition-colors rounded-lg border border-gray-700"
+            >
+              <span className="text-sm text-gray-300 truncate">
+                {state.selectedTask || 'Select a task...'}
+              </span>
+              <ChevronDown className="w-4 h-4 text-gray-500 flex-shrink-0 ml-2" />
+            </button>
+            {taskOpen && tasks.length > 0 && (
+              <div className="absolute z-10 w-full mt-2 bg-gray-800 rounded-lg border border-gray-700 max-h-48 overflow-y-auto shadow-lg">
+                {tasks.map((task) => (
+                  <button
+                    key={task}
+                    onClick={() => handleTaskSelect(task)}
+                    className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg ${
+                      state.selectedTask === task
+                        ? 'bg-gray-700 text-white'
+                        : 'text-gray-400'
+                    }`}
+                  >
+                    {task}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Result Dropdown */}
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Result
+          </label>
+          <div className="relative">
+            <button
+              onClick={() => setResultOpen(!resultOpen)}
+              className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-800 hover:bg-gray-750 transition-colors rounded-lg border border-gray-700"
+            >
+              <span className="text-sm text-gray-300 truncate">
+                {state.selectedResult || 'Select a result...'}
+              </span>
+              <ChevronDown className="w-4 h-4 text-gray-500 flex-shrink-0 ml-2" />
+            </button>
+            {resultOpen && results.length > 0 && (
+              <div className="absolute z-10 w-full mt-2 bg-gray-800 rounded-lg border border-gray-700 max-h-48 overflow-y-auto shadow-lg">
+                {results.map((result) => (
+                  <button
+                    key={result.path}
+                    onClick={() => handleResultSelect(result.name)}
+                    className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg ${
+                      state.selectedResult === result.name
+                        ? 'bg-gray-700 text-white'
+                        : 'text-gray-400'
+                    }`}
+                  >
+                    {result.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Search Button */}
+        <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 transition-colors rounded-lg text-sm font-medium mt-2">
+          <Search className="w-4 h-4" />
+          Search
+        </button>
+      </div>
+
+      {/* Navigation Sections */}
+      <div className="flex-1 overflow-y-auto py-2">
+        {/* Analysis Section */}
+        <div className="px-5 py-3">
+          <button
+            onClick={() =>
+              setSidebarSection(sidebarSection === 'analysis' ? '' : 'analysis')
+            }
+            className="flex items-center justify-between w-full text-left hover:bg-gray-800 px-3 py-2 rounded-lg transition-colors"
+          >
+            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Analysis
+            </span>
+            <ChevronRight
+              className={`w-4 h-4 text-gray-500 transition-transform ${
+                sidebarSection === 'analysis' ? 'rotate-90' : ''
+              }`}
+            />
+          </button>
+          {sidebarSection === 'analysis' && (
+            <div className="mt-3 space-y-1.5">
+              {analysisOptions.map((option) => {
+                const Icon = option.icon;
+                return (
+                  <button
+                    key={option.name}
+                    onClick={() => setActiveTab(option.name)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
+                      activeTab === option.name
+                        ? 'bg-blue-600 text-white'
+                        : 'hover:bg-gray-800 text-gray-400 hover:text-gray-200'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="text-sm">{option.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* View Section */}
+        <div className="px-5 py-3">
+          <button
+            onClick={() =>
+              setSidebarSection(sidebarSection === 'view' ? '' : 'view')
+            }
+            className="flex items-center justify-between w-full text-left hover:bg-gray-800 px-3 py-2 rounded-lg transition-colors"
+          >
+            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+              View Options
+            </span>
+            <ChevronRight
+              className={`w-4 h-4 text-gray-500 transition-transform ${
+                sidebarSection === 'view' ? 'rotate-90' : ''
+              }`}
+            />
+          </button>
+          {sidebarSection === 'view' && (
+            <div className="mt-3 space-y-1.5">
+              {viewOptions.map((option) => {
+                const Icon = option.icon;
+                return (
+                  <button
+                    key={option.name}
+                    onClick={() => setActiveTab(option.name)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
+                      activeTab === option.name
+                        ? 'bg-blue-600 text-white'
+                        : 'hover:bg-gray-800 text-gray-400 hover:text-gray-200'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="text-sm">{option.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Status Bar */}
+      <div className="px-5 py-4 border-t border-gray-800">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-xs text-gray-500">Connected</span>
+          </div>
+          <span className="text-xs text-gray-600">v1.0.0</span>
+        </div>
+        <div className="text-xs text-gray-600">
+          Engine: Active &bull; LLM: Ready
+        </div>
+      </div>
+    </div>
+  );
+}

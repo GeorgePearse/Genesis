@@ -27,7 +27,9 @@ type Action =
   | { type: 'SET_RIGHT_TAB'; payload: string }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'SET_AUTO_REFRESH'; payload: boolean };
+  | { type: 'SET_AUTO_REFRESH'; payload: boolean }
+  | { type: 'SET_SELECTED_TASK'; payload: string | null }
+  | { type: 'SET_SELECTED_RESULT'; payload: string | null };
 
 const initialState: AppState = {
   databases: [],
@@ -40,6 +42,8 @@ const initialState: AppState = {
   isLoading: false,
   error: null,
   autoRefreshEnabled: false,
+  selectedTask: null,
+  selectedResult: null,
 };
 
 function reducer(state: AppState, action: Action): AppState {
@@ -64,6 +68,10 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, error: action.payload };
     case 'SET_AUTO_REFRESH':
       return { ...state, autoRefreshEnabled: action.payload };
+    case 'SET_SELECTED_TASK':
+      return { ...state, selectedTask: action.payload, selectedResult: null };
+    case 'SET_SELECTED_RESULT':
+      return { ...state, selectedResult: action.payload };
     default:
       return state;
   }
@@ -150,8 +158,10 @@ function computeStats(programs: Program[]): EvolutionStats {
 interface GenesisContextValue {
   state: AppState;
   stats: EvolutionStats;
+  dispatch: React.Dispatch<Action>;
   loadDatabases: (force?: boolean) => Promise<void>;
   loadDatabase: (dbPath: string) => Promise<void>;
+  loadPrograms: (dbPath: string) => Promise<void>;
   selectProgram: (program: Program | null) => void;
   setLeftTab: (tab: string) => void;
   setRightTab: (tab: string) => void;
@@ -271,8 +281,10 @@ export function GenesisProvider({ children }: { children: ReactNode }) {
       value={{
         state,
         stats,
+        dispatch,
         loadDatabases,
         loadDatabase,
+        loadPrograms: loadDatabase,
         selectProgram,
         setLeftTab,
         setRightTab,

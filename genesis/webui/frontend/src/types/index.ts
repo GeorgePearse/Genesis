@@ -30,6 +30,8 @@ export interface ProgramMetadata {
   embed_cost?: number;
   novelty_cost?: number;
   meta_cost?: number;
+  llm_result?: LLMResult;
+  model_posteriors?: Record<string, number>;
   [key: string]: unknown;
 }
 
@@ -97,6 +99,8 @@ export interface AppState {
   isLoading: boolean;
   error: string | null;
   autoRefreshEnabled: boolean;
+  selectedTask: string | null;
+  selectedResult: string | null;
 }
 
 // Computed stats
