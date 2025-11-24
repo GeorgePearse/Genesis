@@ -105,6 +105,10 @@ See `examples/mask_to_seg_rust/` for a complete Rust example.
 - [ ] **Formal verification integration** - Prove evolved code correctness
 - [ ] **Energy-aware optimization** - Minimize power consumption
 - [ ] **Hardware-specific tuning** - ARM vs x86, specific CPU features
+- [ ] **Agent Collaboration** - Chat system using the ELM language for conversation and collaboration between agents working on the evolutionary tree
+- [ ] **OptiLLM Integration** - Integrate [OptiLLM](https://github.com/algorithmicsuperintelligence/optillm) to improve LLM outputs with inference time compute strategies (CoT, Best-of-N, etc.)
+- [ ] **AgentEx Integration** - Integrate [Scale AgentEx](https://github.com/scaleapi/scale-agentex) for automated experimentation and hyperparameter optimization of agent configurations
+
 
 ---
 
