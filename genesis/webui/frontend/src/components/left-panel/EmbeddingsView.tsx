@@ -193,6 +193,7 @@ export default function EmbeddingsView() {
         .attr('y', -10)
         .style('text-anchor', 'middle')
         .style('font-size', '10px')
+        .style('fill', '#8b949e')
         .text('Score');
 
     // Island Subplots
@@ -223,11 +224,12 @@ export default function EmbeddingsView() {
             const subHeight = islandData.length * subCellSize;
             
             const subplotDiv = subplotsContainer.append('div')
-                .style('border', '1px solid #ddd')
-                .style('padding', '10px')
-                .style('background', '#fff');
+                .style('border', '1px solid #30363d')
+                .style('padding', '12px')
+                .style('background', '#161b22')
+                .style('border-radius', '8px');
             
-            subplotDiv.append('h5').text(`Island ${islandId} (${islandData.length})`).style('margin', '0 0 10px 0').style('text-align', 'center');
+            subplotDiv.append('h5').text(`Island ${islandId} (${islandData.length})`).style('margin', '0 0 10px 0').style('text-align', 'center').style('color', '#e6edf3').style('font-size', '13px');
             
             const subSvg = subplotDiv.append('svg')
                 .attr('width', subWidth + 20) // minimal margin

@@ -119,9 +119,15 @@ export default function ModelPosteriorsView() {
 
     svgPost.append('g')
         .attr('transform', `translate(0,${height})`)
-        .call(d3.axisBottom(xPost).tickFormat(d3.format('d')));
+        .call(d3.axisBottom(xPost).tickFormat(d3.format('d')))
+        .selectAll('text').style('fill', '#8b949e');
 
-    svgPost.append('g').call(d3.axisLeft(yPost));
+    svgPost.append('g').call(d3.axisLeft(yPost))
+        .selectAll('text').style('fill', '#8b949e');
+
+    // Style axis lines
+    svgPost.selectAll('.domain').style('stroke', '#30363d');
+    svgPost.selectAll('.tick line').style('stroke', '#30363d');
 
     // Lines
     const line = d3.line<any>()
@@ -158,7 +164,7 @@ export default function ModelPosteriorsView() {
     models.forEach((model, i) => {
         const g = legend.append('g').attr('transform', `translate(0, ${i * 20})`);
         g.append('rect').attr('width', 10).attr('height', 10).attr('fill', colorScale(model));
-        g.append('text').attr('x', 15).attr('y', 10).text(model).style('font-size', '10px').attr('alignment-baseline', 'middle');
+        g.append('text').attr('x', 15).attr('y', 10).text(model).style('font-size', '10px').style('fill', '#c9d1d9').attr('alignment-baseline', 'middle');
     });
 
     // --- Counts Chart ---
@@ -190,9 +196,15 @@ export default function ModelPosteriorsView() {
 
     svgCounts.append('g')
         .attr('transform', `translate(0,${height})`)
-        .call(d3.axisBottom(xPost).tickFormat(d3.format('d')));
+        .call(d3.axisBottom(xPost).tickFormat(d3.format('d')))
+        .selectAll('text').style('fill', '#8b949e');
 
-    svgCounts.append('g').call(d3.axisLeft(yCounts));
+    svgCounts.append('g').call(d3.axisLeft(yCounts))
+        .selectAll('text').style('fill', '#8b949e');
+
+    // Style axis lines
+    svgCounts.selectAll('.domain').style('stroke', '#30363d');
+    svgCounts.selectAll('.tick line').style('stroke', '#30363d');
 
     const lineCount = d3.line<any>()
         .x(d => xPost(d.generation))
@@ -215,7 +227,7 @@ export default function ModelPosteriorsView() {
     models.forEach((model, i) => {
         const g = legendCounts.append('g').attr('transform', `translate(0, ${i * 20})`);
         g.append('rect').attr('width', 10).attr('height', 10).attr('fill', colorScale(model));
-        g.append('text').attr('x', 15).attr('y', 10).text(model).style('font-size', '10px').attr('alignment-baseline', 'middle');
+        g.append('text').attr('x', 15).attr('y', 10).text(model).style('font-size', '10px').style('fill', '#c9d1d9').attr('alignment-baseline', 'middle');
     });
 
   }, [data]);

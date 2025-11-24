@@ -114,13 +114,24 @@ export default function ClustersView() {
                     }
                 ]}
                 layout={{
-                    title: { text: '2D PCA' },
+                    title: { text: '2D PCA', font: { color: '#e6edf3' } },
                     autosize: true,
-                    margin: { t: 30, l: 30, r: 10, b: 30 },
-                    xaxis: { title: { text: 'PC1' } },
-                    yaxis: { title: { text: 'PC2' }, scaleanchor: 'x' },
-                    paper_bgcolor: '#f8f9fa',
-                    plot_bgcolor: '#f8f9fa'
+                    margin: { t: 40, l: 50, r: 20, b: 50 },
+                    xaxis: {
+                      title: { text: 'PC1', font: { color: '#8b949e' } },
+                      tickfont: { color: '#8b949e' },
+                      gridcolor: 'rgba(139, 148, 158, 0.1)',
+                      zerolinecolor: 'rgba(139, 148, 158, 0.2)'
+                    },
+                    yaxis: {
+                      title: { text: 'PC2', font: { color: '#8b949e' } },
+                      tickfont: { color: '#8b949e' },
+                      gridcolor: 'rgba(139, 148, 158, 0.1)',
+                      zerolinecolor: 'rgba(139, 148, 158, 0.2)',
+                      scaleanchor: 'x'
+                    },
+                    paper_bgcolor: '#161b22',
+                    plot_bgcolor: '#0d1117'
                 }}
                 useResizeHandler={true}
                 style={{ width: '100%', height: '50%' }}
@@ -149,15 +160,31 @@ export default function ClustersView() {
                     }
                 ]}
                 layout={{
-                    title: { text: '3D PCA' },
+                    title: { text: '3D PCA', font: { color: '#e6edf3' } },
                     autosize: true,
-                    margin: { t: 30, l: 0, r: 0, b: 0 },
+                    margin: { t: 40, l: 0, r: 0, b: 0 },
                     scene: {
-                        xaxis: { title: { text: 'PC1' } },
-                        yaxis: { title: { text: 'PC2' } },
-                        zaxis: { title: { text: 'PC3' } }
+                        xaxis: {
+                          title: { text: 'PC1', font: { color: '#8b949e' } },
+                          tickfont: { color: '#8b949e' },
+                          gridcolor: 'rgba(139, 148, 158, 0.15)',
+                          backgroundcolor: '#0d1117'
+                        },
+                        yaxis: {
+                          title: { text: 'PC2', font: { color: '#8b949e' } },
+                          tickfont: { color: '#8b949e' },
+                          gridcolor: 'rgba(139, 148, 158, 0.15)',
+                          backgroundcolor: '#0d1117'
+                        },
+                        zaxis: {
+                          title: { text: 'PC3', font: { color: '#8b949e' } },
+                          tickfont: { color: '#8b949e' },
+                          gridcolor: 'rgba(139, 148, 158, 0.15)',
+                          backgroundcolor: '#0d1117'
+                        },
+                        bgcolor: '#0d1117'
                     },
-                    paper_bgcolor: '#f8f9fa'
+                    paper_bgcolor: '#161b22'
                 }}
                 useResizeHandler={true}
                 style={{ width: '100%', height: '50%' }}
