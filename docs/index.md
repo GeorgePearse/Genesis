@@ -87,101 +87,95 @@ runner = EvolutionRunner(
 runner.run()
 ```
 
-<details>
-<summary><strong>EvolutionConfig Parameters</strong> (click to expand)</summary>
+??? info "EvolutionConfig Parameters"
 
-| Key | Default Value | Type | Explanation |
-|-----|---------------|------|-------------|
-| `task_sys_msg` | `None` | `Optional[str]` | System message describing the optimization task |
-| `patch_types` | `["diff"]` | `List[str]` | Types of patches to generate: "diff", "full", "cross" |
-| `patch_type_probs` | `[1.0]` | `List[float]` | Probabilities for each patch type |
-| `num_generations` | `10` | `int` | Number of evolution generations to run |
-| `max_parallel_jobs` | `2` | `int` | Maximum number of parallel evaluation jobs |
-| `max_patch_resamples` | `3` | `int` | Max times to resample a patch if it fails |
-| `max_patch_attempts` | `5` | `int` | Max attempts to generate a valid patch |
-| `job_type` | `"local"` | `str` | Job execution type: "local", "slurm_docker", "slurm_conda" |
-| `language` | `"python"` | `str` | Programming language for evolution |
-| `llm_models` | `["azure-gpt-4.1-mini"]` | `List[str]` | List of LLM models for code generation |
-| `llm_dynamic_selection` | `None` | `Optional[Union[str, BanditBase]]` | Dynamic model selection strategy |
-| `llm_dynamic_selection_kwargs` | `{}` | `dict` | Kwargs for dynamic selection |
-| `llm_kwargs` | `{}` | `dict` | Additional kwargs for LLM calls |
-| `meta_rec_interval` | `None` | `Optional[int]` | Interval for meta-recommendations |
-| `meta_llm_models` | `None` | `Optional[List[str]]` | LLM models for meta-recommendations |
-| `meta_llm_kwargs` | `{}` | `dict` | Kwargs for meta-recommendation LLMs |
-| `meta_max_recommendations` | `5` | `int` | Max number of meta-recommendations |
-| `embedding_model` | `None` | `Optional[str]` | Model for code embeddings |
-| `init_program_path` | `"initial.py"` | `Optional[str]` | Path to initial program to evolve |
-| `results_dir` | `None` | `Optional[str]` | Directory to save results (auto-generated if None) |
-| `max_novelty_attempts` | `3` | `int` | Max attempts for novelty generation |
-| `code_embed_sim_threshold` | `1.0` | `float` | Similarity threshold for code embeddings |
-| `novelty_llm_models` | `None` | `Optional[List[str]]` | LLM models for novelty judgment |
-| `novelty_llm_kwargs` | `{}` | `dict` | Kwargs for novelty LLMs |
-| `use_text_feedback` | `False` | `bool` | Whether to use text feedback in evolution |
+    | Key | Default Value | Type | Explanation |
+    |-----|---------------|------|-------------|
+    | `task_sys_msg` | `None` | `Optional[str]` | System message describing the optimization task |
+    | `patch_types` | `["diff"]` | `List[str]` | Types of patches to generate: "diff", "full", "cross" |
+    | `patch_type_probs` | `[1.0]` | `List[float]` | Probabilities for each patch type |
+    | `num_generations` | `10` | `int` | Number of evolution generations to run |
+    | `max_parallel_jobs` | `2` | `int` | Maximum number of parallel evaluation jobs |
+    | `max_patch_resamples` | `3` | `int` | Max times to resample a patch if it fails |
+    | `max_patch_attempts` | `5` | `int` | Max attempts to generate a valid patch |
+    | `job_type` | `"local"` | `str` | Job execution type: "local", "slurm_docker", "slurm_conda" |
+    | `language` | `"python"` | `str` | Programming language for evolution |
+    | `llm_models` | `["azure-gpt-4.1-mini"]` | `List[str]` | List of LLM models for code generation |
+    | `llm_dynamic_selection` | `None` | `Optional[Union[str, BanditBase]]` | Dynamic model selection strategy |
+    | `llm_dynamic_selection_kwargs` | `{}` | `dict` | Kwargs for dynamic selection |
+    | `llm_kwargs` | `{}` | `dict` | Additional kwargs for LLM calls |
+    | `meta_rec_interval` | `None` | `Optional[int]` | Interval for meta-recommendations |
+    | `meta_llm_models` | `None` | `Optional[List[str]]` | LLM models for meta-recommendations |
+    | `meta_llm_kwargs` | `{}` | `dict` | Kwargs for meta-recommendation LLMs |
+    | `meta_max_recommendations` | `5` | `int` | Max number of meta-recommendations |
+    | `embedding_model` | `None` | `Optional[str]` | Model for code embeddings |
+    | `init_program_path` | `"initial.py"` | `Optional[str]` | Path to initial program to evolve |
+    | `results_dir` | `None` | `Optional[str]` | Directory to save results (auto-generated if None) |
+    | `max_novelty_attempts` | `3` | `int` | Max attempts for novelty generation |
+    | `code_embed_sim_threshold` | `1.0` | `float` | Similarity threshold for code embeddings |
+    | `novelty_llm_models` | `None` | `Optional[List[str]]` | LLM models for novelty judgment |
+    | `novelty_llm_kwargs` | `{}` | `dict` | Kwargs for novelty LLMs |
+    | `use_text_feedback` | `False` | `bool` | Whether to use text feedback in evolution |
 
-</details>
+??? info "DatabaseConfig Parameters"
 
-<details>
-<summary><strong>DatabaseConfig Parameters</strong> (click to expand)</summary>
+    | Key | Default Value | Type | Explanation |
+    |-----|---------------|------|-------------|
+    | `db_path` | `None` | `Optional[str]` | Database file path (auto-generated if None) |
+    | `num_islands` | `4` | `int` | Number of evolution islands for diversity |
+    | `archive_size` | `100` | `int` | Size of program archive per island |
+    | `elite_selection_ratio` | `0.3` | `float` | Proportion of elite programs for inspiration |
+    | `num_archive_inspirations` | `5` | `int` | Number of archive programs to use as inspiration |
+    | `num_top_k_inspirations` | `2` | `int` | Number of top-k programs for inspiration |
+    | `migration_interval` | `10` | `int` | Generations between island migrations |
+    | `migration_rate` | `0.1` | `float` | Proportion of island population to migrate |
+    | `island_elitism` | `True` | `bool` | Keep best programs on their original islands |
+    | `enforce_island_separation` | `True` | `bool` | Enforce full separation between islands |
+    | `parent_selection_strategy` | `"power_law"` | `str` | Parent selection: "weighted", "power_law", "beam_search" |
+    | `exploitation_alpha` | `1.0` | `float` | Power-law exponent (0=uniform, 1=power-law) |
+    | `exploitation_ratio` | `0.2` | `float` | Chance to pick parent from archive |
+    | `parent_selection_lambda` | `10.0` | `float` | Sharpness of sigmoid for weighted selection |
+    | `num_beams` | `5` | `int` | Number of beams for beam search selection |
 
-| Key | Default Value | Type | Explanation |
-|-----|---------------|------|-------------|
-| `db_path` | `None` | `Optional[str]` | Database file path (auto-generated if None) |
-| `num_islands` | `4` | `int` | Number of evolution islands for diversity |
-| `archive_size` | `100` | `int` | Size of program archive per island |
-| `elite_selection_ratio` | `0.3` | `float` | Proportion of elite programs for inspiration |
-| `num_archive_inspirations` | `5` | `int` | Number of archive programs to use as inspiration |
-| `num_top_k_inspirations` | `2` | `int` | Number of top-k programs for inspiration |
-| `migration_interval` | `10` | `int` | Generations between island migrations |
-| `migration_rate` | `0.1` | `float` | Proportion of island population to migrate |
-| `island_elitism` | `True` | `bool` | Keep best programs on their original islands |
-| `enforce_island_separation` | `True` | `bool` | Enforce full separation between islands |
-| `parent_selection_strategy` | `"power_law"` | `str` | Parent selection: "weighted", "power_law", "beam_search" |
-| `exploitation_alpha` | `1.0` | `float` | Power-law exponent (0=uniform, 1=power-law) |
-| `exploitation_ratio` | `0.2` | `float` | Chance to pick parent from archive |
-| `parent_selection_lambda` | `10.0` | `float` | Sharpness of sigmoid for weighted selection |
-| `num_beams` | `5` | `int` | Number of beams for beam search selection |
+??? info "JobConfig Parameters"
 
-</details>
+    **LocalJobConfig** (for local execution):
 
-<details>
-<summary><strong>JobConfig Parameters</strong> (click to expand)</summary>
+    | Key | Default Value | Type | Explanation |
+    |-----|---------------|------|-------------|
+    | `eval_program_path` | `"evaluate.py"` | `Optional[str]` | Path to evaluation script |
+    | `extra_cmd_args` | `{}` | `Dict[str, Any]` | Additional command line arguments |
+    | `time` | `None` | `Optional[str]` | Time limit for job execution |
+    | `conda_env` | `None` | `Optional[str]` | Conda environment to run jobs in |
 
-**LocalJobConfig** (for local execution):
-| Key | Default Value | Type | Explanation |
-|-----|---------------|------|-------------|
-| `eval_program_path` | `"evaluate.py"` | `Optional[str]` | Path to evaluation script |
-| `extra_cmd_args` | `{}` | `Dict[str, Any]` | Additional command line arguments |
-| `time` | `None` | `Optional[str]` | Time limit for job execution |
-| `conda_env` | `None` | `Optional[str]` | Conda environment to run jobs in |
+    **SlurmDockerJobConfig** (for SLURM with Docker):
 
-**SlurmDockerJobConfig** (for SLURM with Docker):
-| Key | Default Value | Type | Explanation |
-|-----|---------------|------|-------------|
-| `eval_program_path` | `"evaluate.py"` | `Optional[str]` | Path to evaluation script |
-| `extra_cmd_args` | `{}` | `Dict[str, Any]` | Additional command line arguments |
-| `image` | `"ubuntu:latest"` | `str` | Docker image to use |
-| `image_tar_path` | `None` | `Optional[str]` | Path to Docker image tar file |
-| `docker_flags` | `""` | `str` | Additional Docker flags |
-| `partition` | `"gpu"` | `str` | SLURM partition to use |
-| `time` | `"01:00:00"` | `str` | Job time limit |
-| `cpus` | `1` | `int` | Number of CPUs to request |
-| `gpus` | `1` | `int` | Number of GPUs to request |
-| `mem` | `"8G"` | `Optional[str]` | Memory to request |
+    | Key | Default Value | Type | Explanation |
+    |-----|---------------|------|-------------|
+    | `eval_program_path` | `"evaluate.py"` | `Optional[str]` | Path to evaluation script |
+    | `extra_cmd_args` | `{}` | `Dict[str, Any]` | Additional command line arguments |
+    | `image` | `"ubuntu:latest"` | `str` | Docker image to use |
+    | `image_tar_path` | `None` | `Optional[str]` | Path to Docker image tar file |
+    | `docker_flags` | `""` | `str` | Additional Docker flags |
+    | `partition` | `"gpu"` | `str` | SLURM partition to use |
+    | `time` | `"01:00:00"` | `str` | Job time limit |
+    | `cpus` | `1` | `int` | Number of CPUs to request |
+    | `gpus` | `1` | `int` | Number of GPUs to request |
+    | `mem` | `"8G"` | `Optional[str]` | Memory to request |
 
-**SlurmCondaJobConfig** (for SLURM with Conda):
-| Key | Default Value | Type | Explanation |
-|-----|---------------|------|-------------|
-| `eval_program_path` | `"evaluate.py"` | `Optional[str]` | Path to evaluation script |
-| `extra_cmd_args` | `{}` | `Dict[str, Any]` | Additional command line arguments |
-| `conda_env` | `""` | `str` | Conda environment name |
-| `modules` | `[]` | `Optional[List[str]]` | Environment modules to load |
-| `partition` | `"gpu"` | `str` | SLURM partition to use |
-| `time` | `"01:00:00"` | `str` | Job time limit |
-| `cpus` | `1` | `int` | Number of CPUs to request |
-| `gpus` | `1` | `int` | Number of GPUs to request |
-| `mem` | `"8G"` | `Optional[str]` | Memory to request |
+    **SlurmCondaJobConfig** (for SLURM with Conda):
 
-</details>
+    | Key | Default Value | Type | Explanation |
+    |-----|---------------|------|-------------|
+    | `eval_program_path` | `"evaluate.py"` | `Optional[str]` | Path to evaluation script |
+    | `extra_cmd_args` | `{}` | `Dict[str, Any]` | Additional command line arguments |
+    | `conda_env` | `""` | `str` | Conda environment name |
+    | `modules` | `[]` | `Optional[List[str]]` | Environment modules to load |
+    | `partition` | `"gpu"` | `str` | SLURM partition to use |
+    | `time` | `"01:00:00"` | `str` | Job time limit |
+    | `cpus` | `1` | `int` | Number of CPUs to request |
+    | `gpus` | `1` | `int` | Number of GPUs to request |
+    | `mem` | `"8G"` | `Optional[str]` | Memory to request |
 
 ### Evaluation Setup & Initial Solution 🏃
 
