@@ -286,7 +286,9 @@ For comprehensive configuration options and advanced usage, see the [Configurati
 
 Monitor your evolution experiments in real-time with Genesis's interactive web interface! The WebUI provides live visualization of the evolutionary process, genealogy trees, and performance metrics.
 
-![WebUI Screenshot](docs/webui.png)
+![WebUI Screenshot - Programs View](docs/webui-programs.png)
+
+*The Programs view showing evolution results from HNSW optimization, with sortable columns for generation, score, cost, and complexity metrics.*
 
 ### Quick Start
 
