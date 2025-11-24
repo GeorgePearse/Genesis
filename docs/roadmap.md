@@ -108,6 +108,16 @@ See `examples/mask_to_seg_rust/` for a complete Rust example.
 - [ ] **Agent Collaboration** - Chat system using the ELM language for conversation and collaboration between agents working on the evolutionary tree
 - [ ] **OptiLLM Integration** - Integrate [OptiLLM](https://github.com/algorithmicsuperintelligence/optillm) to improve LLM outputs with inference time compute strategies (CoT, Best-of-N, etc.)
 - [ ] **AgentEx Integration** - Integrate [Scale AgentEx](https://github.com/scaleapi/scale-agentex) for automated experimentation and hyperparameter optimization of agent configurations
+- [ ] **Letta Memory Integration** - Integrate [Letta](https://github.com/letta-ai/letta) as an alternative memory system for long-term state management and knowledge retention across evolution generations
+- [ ] **Advanced Search & Logging** - Implement a robust search engine and comprehensive logging system.
+  
+  **Proposed Architecture:**
+  - **The Python Layer: `structlog`**: Replace standard logging to force key-value context (e.g., `run_id`, `generation`, `tokens_in`, `reasoning`) attached to every log line.
+  - **Storage Tier A: JSONL (Default)**: Write to `evolution_events.jsonl` files in the results directory for human-readable, zero-infrastructure local logging.
+  - **Storage Tier B: ClickHouse (Production)**: Use a sidecar process to batch ingest JSONL logs into ClickHouse for high-performance compression (10x-100x text compression) and instant SQL analytics on millions of log rows.
+  - **Query Capability**: Enable SQL queries like `SELECT reasoning FROM genesis_logs WHERE reasoning ILIKE '%segmentation fault%'` to instantly find "what the LLMs are thinking" across massive evolutionary runs.
+
+
 
 
 ---

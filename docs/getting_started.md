@@ -463,6 +463,10 @@ genesis_launch variant=my_variant verbose=true
 - See the [Configuration Guide](configuration.md) for detailed parameter explanations
 - Examine the generated experiment logs in the results directory
 
+### Advanced Debugging & Logging
+
+For deep analysis of evolutionary runs, enabling comprehensive logging is essential. Future versions of Genesis will include a robust search engine (e.g., vector database, elasticsearch) to trace LLM reasoning chains and allow you to search through the entire history of "what the LLMs were actually thinking" across all generations.
+
 ## Next Steps
 
 Now that you have Genesis running:
