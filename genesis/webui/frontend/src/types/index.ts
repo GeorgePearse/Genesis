@@ -101,6 +101,7 @@ export interface AppState {
   autoRefreshEnabled: boolean;
   selectedTask: string | null;
   selectedResult: string | null;
+  isCommandMenuOpen: boolean;
 }
 
 // Computed stats

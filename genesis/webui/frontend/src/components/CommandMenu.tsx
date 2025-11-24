@@ -37,31 +37,32 @@ export default function CommandMenu() {
     setLeftTab, 
     setRightTab, 
     refreshData, 
-    setAutoRefresh 
+    setAutoRefresh,
+    setCommandMenuOpen
   } = useGenesis();
   
-  const [open, setOpen] = useState(false);
+  const open = state.isCommandMenuOpen;
 
   // Toggle the menu when ⌘K is pressed
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setOpen((open) => !open);
+        setCommandMenuOpen(!open);
       }
     };
 
     document.addEventListener('keydown', down);
     return () => document.removeEventListener('keydown', down);
-  }, []);
+  }, [open, setCommandMenuOpen]);
 
   const runCommand = (command: () => void) => {
     command();
-    setOpen(false);
+    setCommandMenuOpen(false);
   };
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
+    <CommandDialog open={open} onOpenChange={setCommandMenuOpen}>
       <CommandInput placeholder="Type a command or search..." />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>

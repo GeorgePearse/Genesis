@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('clicking program row shows code in viewer', async ({ page }) => {
   // Navigate to the app
-  await page.goto('http://localhost:5178/');
+  await page.goto('http://localhost:5173/');
 
   // Wait for initial load and API data
   await page.waitForTimeout(2000);

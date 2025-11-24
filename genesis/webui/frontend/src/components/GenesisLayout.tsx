@@ -4,7 +4,6 @@ import MainContent from './MainContent';
 import { useGenesis } from '../context/GenesisContext';
 
 export default function GenesisLayout() {
-  const [activeTab, setActiveTab] = useState('Tree');
   const { loadDatabases } = useGenesis();
 
   // Load databases on mount
@@ -14,8 +13,8 @@ export default function GenesisLayout() {
 
   return (
     <div className="h-screen bg-gray-950 text-gray-100 flex overflow-hidden">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <MainContent activeTab={activeTab} />
+      <Sidebar />
+      <MainContent />
     </div>
   );
 }

@@ -29,7 +29,8 @@ type Action =
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SET_AUTO_REFRESH'; payload: boolean }
   | { type: 'SET_SELECTED_TASK'; payload: string | null }
-  | { type: 'SET_SELECTED_RESULT'; payload: string | null };
+  | { type: 'SET_SELECTED_RESULT'; payload: string | null }
+  | { type: 'SET_COMMAND_MENU_OPEN'; payload: boolean };
 
 const initialState: AppState = {
   databases: [],
@@ -44,6 +45,7 @@ const initialState: AppState = {
   autoRefreshEnabled: false,
   selectedTask: null,
   selectedResult: null,
+  isCommandMenuOpen: false,
 };
 
 function reducer(state: AppState, action: Action): AppState {
@@ -72,6 +74,8 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, selectedTask: action.payload, selectedResult: null };
     case 'SET_SELECTED_RESULT':
       return { ...state, selectedResult: action.payload };
+    case 'SET_COMMAND_MENU_OPEN':
+      return { ...state, isCommandMenuOpen: action.payload };
     default:
       return state;
   }
@@ -167,6 +171,7 @@ interface GenesisContextValue {
   setRightTab: (tab: string) => void;
   setAutoRefresh: (enabled: boolean) => void;
   refreshData: () => Promise<void>;
+  setCommandMenuOpen: (open: boolean) => void;
 }
 
 const GenesisContext = createContext<GenesisContextValue | null>(null);
@@ -267,6 +272,10 @@ export function GenesisProvider({ children }: { children: ReactNode }) {
     [state.currentDbPath, refreshData]
   );
 
+  const setCommandMenuOpen = useCallback((open: boolean) => {
+    dispatch({ type: 'SET_COMMAND_MENU_OPEN', payload: open });
+  }, []);
+
   // Cleanup auto-refresh on unmount
   useEffect(() => {
     return () => {
@@ -290,6 +299,7 @@ export function GenesisProvider({ children }: { children: ReactNode }) {
         setRightTab,
         setAutoRefresh,
         refreshData,
+        setCommandMenuOpen,
       }}
     >
       {children}

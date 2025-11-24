@@ -245,7 +245,13 @@ export default function TreeView() {
       .attr('transform', (d) => `translate(${d.x ?? 0},${d.y ?? 0})`)
       .style('cursor', 'pointer')
       .on('click', (_, d) => {
-        const originalProgram = programs.find((p) => p.id === d.data.id);
+        let originalProgram = programs.find((p) => p.id === d.data.id);
+
+        // Handle unified root node - select the first gen0 program
+        if (!originalProgram && d.data.isUnifiedRoot) {
+          originalProgram = programs.find((p) => p.generation === 0);
+        }
+
         if (originalProgram) {
           selectProgram(originalProgram);
           setRightTab('code-viewer');

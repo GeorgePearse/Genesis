@@ -18,39 +18,36 @@ import {
 } from 'lucide-react';
 import { useGenesis } from '../context/GenesisContext';
 
-interface SidebarProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-}
-
 const analysisOptions = [
-  { name: 'Tree', icon: GitBranch },
-  { name: 'Programs', icon: Code2 },
-  { name: 'Metrics', icon: BarChart3 },
-  { name: 'Embeddings', icon: Layers },
-  { name: 'Clusters', icon: Activity },
-  { name: 'Islands', icon: Globe },
-  { name: 'LLM Posterior', icon: Brain },
-  { name: 'Path → Best', icon: Route },
+  { id: 'tree-view', label: 'Tree', icon: GitBranch },
+  { id: 'table-view', label: 'Programs', icon: Code2 },
+  { id: 'metrics-view', label: 'Metrics', icon: BarChart3 },
+  { id: 'embeddings-view', label: 'Embeddings', icon: Layers },
+  { id: 'clusters-view', label: 'Clusters', icon: Activity },
+  { id: 'islands-view', label: 'Islands', icon: Globe },
+  { id: 'model-posteriors-view', label: 'LLM Posterior', icon: Brain },
+  { id: 'best-path-view', label: 'Path → Best', icon: Route },
 ];
 
 const viewOptions = [
-  { name: 'Meta', icon: Database },
-  { name: 'Pareto Front', icon: Activity },
-  { name: 'Scratchpad', icon: FileCode },
-  { name: 'Node', icon: Cpu },
-  { name: 'Code', icon: Code2 },
-  { name: 'Diff', icon: GitCompare },
-  { name: 'Evaluation', icon: BarChart3 },
-  { name: 'LLM Result', icon: Brain },
+  { id: 'meta-info', label: 'Meta', icon: Database },
+  { id: 'pareto-front', label: 'Pareto Front', icon: Activity },
+  { id: 'scratchpad', label: 'Scratchpad', icon: FileCode },
+  { id: 'node-details', label: 'Node', icon: Cpu },
+  { id: 'code-viewer', label: 'Code', icon: Code2 },
+  { id: 'diff-viewer', label: 'Diff', icon: GitCompare },
+  { id: 'evaluation', label: 'Evaluation', icon: BarChart3 },
+  { id: 'llm-result', label: 'LLM Result', icon: Brain },
 ];
 
-export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
-  const { state, dispatch, loadDatabase } = useGenesis();
+export default function Sidebar() {
+  const { state, dispatch, loadDatabase, setLeftTab, setCommandMenuOpen } = useGenesis();
   const [analysisOpen, setAnalysisOpen] = useState(true);
   const [viewOpen, setViewOpen] = useState(true);
   const [taskOpen, setTaskOpen] = useState(false);
   const [resultOpen, setResultOpen] = useState(false);
+
+  const activeTab = state.selectedLeftTab;
 
   const tasks = Object.keys(state.tasksAndResults).sort();
   const results = state.selectedTask
@@ -168,7 +165,10 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         </div>
 
         {/* Search Button */}
-        <button className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 transition-colors rounded-lg text-sm font-medium">
+        <button 
+          onClick={() => setCommandMenuOpen(true)}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 transition-colors rounded-lg text-sm font-medium"
+        >
           <Search className="w-4 h-4" />
           Search
         </button>
@@ -197,16 +197,16 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                 const Icon = option.icon;
                 return (
                   <button
-                    key={option.name}
-                    onClick={() => setActiveTab(option.name)}
+                    key={option.id}
+                    onClick={() => setLeftTab(option.id)}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                      activeTab === option.name
+                      activeTab === option.id
                         ? 'bg-blue-600 text-white'
                         : 'hover:bg-gray-800 text-gray-400 hover:text-gray-200'
                     }`}
                   >
                     <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm">{option.name}</span>
+                    <span className="text-sm">{option.label}</span>
                   </button>
                 );
               })}
@@ -235,16 +235,16 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                 const Icon = option.icon;
                 return (
                   <button
-                    key={option.name}
-                    onClick={() => setActiveTab(option.name)}
+                    key={option.id}
+                    onClick={() => setLeftTab(option.id)}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                      activeTab === option.name
+                      activeTab === option.id
                         ? 'bg-blue-600 text-white'
                         : 'hover:bg-gray-800 text-gray-400 hover:text-gray-200'
                     }`}
                   >
                     <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm">{option.name}</span>
+                    <span className="text-sm">{option.label}</span>
                   </button>
                 );
               })}

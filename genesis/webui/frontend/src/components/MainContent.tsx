@@ -20,12 +20,17 @@ import DiffViewerPanel from './right-panel/DiffViewerPanel';
 import EvaluationPanel from './right-panel/EvaluationPanel';
 import LLMResultPanel from './right-panel/LLMResultPanel';
 
-interface MainContentProps {
-  activeTab: string;
-}
-
 // Tabs that show a split view with a right panel
-const SPLIT_VIEW_TABS = ['Tree', 'Programs', 'Metrics', 'Embeddings', 'Clusters', 'Islands', 'LLM Posterior', 'Path → Best'];
+const SPLIT_VIEW_TABS = [
+  'tree-view',
+  'table-view',
+  'metrics-view',
+  'embeddings-view',
+  'clusters-view',
+  'islands-view',
+  'model-posteriors-view',
+  'best-path-view'
+];
 
 // Right panel tab options
 const RIGHT_TABS = [
@@ -36,67 +41,84 @@ const RIGHT_TABS = [
   { id: 'llm-result', label: 'LLM' },
 ];
 
+// Tab label mapping
+const TAB_LABELS: Record<string, string> = {
+  'tree-view': 'Tree',
+  'table-view': 'Programs',
+  'metrics-view': 'Metrics',
+  'embeddings-view': 'Embeddings',
+  'clusters-view': 'Clusters',
+  'islands-view': 'Islands',
+  'model-posteriors-view': 'LLM Posterior',
+  'best-path-view': 'Path → Best',
+  'meta-info': 'Meta',
+  'pareto-front': 'Pareto Front',
+  'scratchpad': 'Scratchpad',
+  'node-details': 'Node',
+  'code-viewer': 'Code',
+  'diff-viewer': 'Diff',
+  'evaluation': 'Evaluation',
+  'llm-result': 'LLM Result'
+};
+
 // Min/max constraints for the right panel
 const MIN_RIGHT_PANEL_WIDTH = 300;
 const MAX_RIGHT_PANEL_WIDTH = 1200;
 const DEFAULT_RIGHT_PANEL_WIDTH = 500;
 
-export default function MainContent({ activeTab }: MainContentProps) {
+export default function MainContent() {
   const { state, setRightTab } = useGenesis();
-  const { selectedRightTab, selectedProgram } = state;
+  const { selectedLeftTab: activeTab, selectedRightTab, selectedProgram } = state;
 
-  // Right panel width state with localStorage persistence
+  // Resizable panel state
   const [rightPanelWidth, setRightPanelWidth] = useState(() => {
-    const saved = localStorage.getItem('genesis-right-panel-width');
+    const saved = localStorage.getItem('rightPanelWidth');
     return saved ? parseInt(saved, 10) : DEFAULT_RIGHT_PANEL_WIDTH;
   });
-
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Save width to localStorage when it changes
+  // Save panel width to localStorage when it changes
   useEffect(() => {
-    localStorage.setItem('genesis-right-panel-width', rightPanelWidth.toString());
+    localStorage.setItem('rightPanelWidth', rightPanelWidth.toString());
   }, [rightPanelWidth]);
 
   // Handle mouse move during drag
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isDragging || !containerRef.current) return;
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging || !containerRef.current) return;
 
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const newWidth = containerRect.right - e.clientX;
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const newWidth = containerRect.right - e.clientX;
 
-      // Clamp to min/max
-      const clampedWidth = Math.min(
-        Math.max(newWidth, MIN_RIGHT_PANEL_WIDTH),
-        MAX_RIGHT_PANEL_WIDTH
-      );
-
-      setRightPanelWidth(clampedWidth);
-    },
-    [isDragging]
-  );
+    // Clamp to min/max
+    const clampedWidth = Math.max(MIN_RIGHT_PANEL_WIDTH, Math.min(MAX_RIGHT_PANEL_WIDTH, newWidth));
+    setRightPanelWidth(clampedWidth);
+  }, [isDragging]);
 
   // Handle mouse up to stop dragging
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
   }, []);
 
-  // Add/remove global event listeners
+  // Add/remove global mouse listeners for dragging
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
+    } else {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     }
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
@@ -113,21 +135,21 @@ export default function MainContent({ activeTab }: MainContentProps) {
 
   const renderLeftPanel = () => {
     switch (activeTab) {
-      case 'Tree':
+      case 'tree-view':
         return <TreeView />;
-      case 'Programs':
+      case 'table-view':
         return <ProgramsTable />;
-      case 'Metrics':
+      case 'metrics-view':
         return <MetricsView />;
-      case 'Embeddings':
+      case 'embeddings-view':
         return <EmbeddingsView />;
-      case 'Clusters':
+      case 'clusters-view':
         return <ClustersView />;
-      case 'Islands':
+      case 'islands-view':
         return <IslandsView />;
-      case 'LLM Posterior':
+      case 'model-posteriors-view':
         return <ModelPosteriorsView />;
-      case 'Path → Best':
+      case 'best-path-view':
         return <BestPathView />;
       default:
         return <TreeView />;
@@ -153,21 +175,21 @@ export default function MainContent({ activeTab }: MainContentProps) {
 
   const renderSinglePanel = () => {
     switch (activeTab) {
-      case 'Meta':
+      case 'meta-info':
         return <MetaInfoPanel />;
-      case 'Pareto Front':
+      case 'pareto-front':
         return <ParetoFrontPanel />;
-      case 'Scratchpad':
+      case 'scratchpad':
         return <ScratchpadPanel />;
-      case 'Node':
+      case 'node-details':
         return <NodeDetailsPanel />;
-      case 'Code':
+      case 'code-viewer':
         return <CodeViewerPanel />;
-      case 'Diff':
+      case 'diff-viewer':
         return <DiffViewerPanel />;
-      case 'Evaluation':
+      case 'evaluation':
         return <EvaluationPanel />;
-      case 'LLM Result':
+      case 'llm-result':
         return <LLMResultPanel />;
       default:
         return null;
@@ -180,7 +202,7 @@ export default function MainContent({ activeTab }: MainContentProps) {
       <div className="flex-1 flex flex-col">
         <div className="bg-gray-900 border-b border-gray-800 px-6 py-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-medium text-white">{activeTab}</h2>
+            <h2 className="text-lg font-medium text-white">{TAB_LABELS[activeTab] || activeTab}</h2>
             <div className="flex items-center gap-2">
               <button className="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors">
                 Export
@@ -219,7 +241,7 @@ export default function MainContent({ activeTab }: MainContentProps) {
       <div className="flex-1 flex flex-col">
         <div className="bg-gray-900 border-b border-gray-800 px-6 py-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-medium text-white">{activeTab}</h2>
+            <h2 className="text-lg font-medium text-white">{TAB_LABELS[activeTab] || activeTab}</h2>
             <div className="flex items-center gap-2">
               <button className="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors">
                 Export
@@ -241,7 +263,7 @@ export default function MainContent({ activeTab }: MainContentProps) {
       {/* Content Header */}
       <div className="bg-gray-900 border-b border-gray-800 px-6 py-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium text-white">{activeTab}</h2>
+          <h2 className="text-lg font-medium text-white">{TAB_LABELS[activeTab] || activeTab}</h2>
           <div className="flex items-center gap-2">
             <button className="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors">
               Export
