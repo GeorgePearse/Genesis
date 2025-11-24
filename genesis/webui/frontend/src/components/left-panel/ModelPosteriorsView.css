@@ -1,0 +1,50 @@
+.model-posteriors-view {
+  height: 100%;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.model-posteriors-view.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+}
+
+.model-posteriors-view h4 {
+  margin: 0 0 20px 0;
+  text-align: center;
+}
+
+.model-stats {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+}
+
+.model-stats h5 {
+  margin: 0 0 10px 0;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.stats-table th,
+.stats-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.stats-table th {
+  background-color: #e9ecef;
+  font-weight: 600;
+}
+
+.stats-table tbody tr:hover {
+  background-color: #f1f8ff;
+}

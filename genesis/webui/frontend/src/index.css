@@ -4,6 +4,12 @@
   padding: 0;
 }
 
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
 :root {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
@@ -21,9 +27,7 @@
 }
 
 body {
-  margin: 0;
   min-width: 320px;
-  min-height: 100vh;
 }
 
 a {
@@ -35,24 +39,21 @@ a:hover {
   text-decoration: underline;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #3498db;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.2s;
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-button:hover {
-  background-color: #2980b9;
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
 }
 
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }

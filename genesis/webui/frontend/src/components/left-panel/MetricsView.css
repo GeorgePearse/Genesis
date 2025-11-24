@@ -1,0 +1,36 @@
+.metrics-view {
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.metrics-view.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+}
+
+.metrics-view h4 {
+  margin: 0 0 20px 0;
+  text-align: center;
+  color: #2c3e50;
+}
+
+.chart-container {
+  margin-bottom: 30px;
+}
+
+.chart-container h5 {
+  margin: 0 0 10px 0;
+  color: #495057;
+  font-size: 14px;
+}
+
+.chart-wrapper {
+  height: 250px;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 10px;
+}

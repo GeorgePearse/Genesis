@@ -1,0 +1,33 @@
+.embeddings-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.embeddings-view.empty {
+  align-items: center;
+  justify-content: center;
+  color: #666;
+}
+
+.embeddings-controls {
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+}
+
+.embeddings-controls h4 {
+  margin: 0 0 10px 0;
+}
+
+.info-text {
+  color: #666;
+  font-size: 13px;
+  margin: 0;
+}
+
+.embeddings-content {
+  flex: 1;
+  padding: 20px;
+  overflow: auto;
+}
