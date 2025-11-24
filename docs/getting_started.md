@@ -451,7 +451,7 @@ genesis_launch variant=my_variant verbose=true
 
 ### Getting Help
 
-- Check the [examples](../examples/) directory for reference implementations
+- Check the [examples](https://github.com/GeorgePearse/Genesis/tree/main/examples/) directory for reference implementations
 - See the [Configuration Guide](configuration.md) for detailed parameter explanations
 - Examine the generated experiment logs in the results directory
 

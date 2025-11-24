@@ -107,8 +107,8 @@ def submit(
         logger.info(f"Creating E2B sandbox for job {job_id}...")
 
     try:
-        # Create sandbox with the specified template
-        sandbox = Sandbox(
+        # E2B v2.x uses Sandbox.create() instead of constructor
+        sandbox = Sandbox.create(
             template=template,
             timeout=timeout,
             api_key=get_e2b_api_key(),
@@ -225,7 +225,8 @@ def submit_with_files(
         logger.info(f"Creating E2B sandbox for job {job_id}...")
 
     try:
-        sandbox = Sandbox(
+        # E2B v2.x uses Sandbox.create() instead of constructor
+        sandbox = Sandbox.create(
             template=template,
             timeout=timeout,
             api_key=get_e2b_api_key(),

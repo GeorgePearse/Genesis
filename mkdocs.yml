@@ -1,0 +1,73 @@
+site_name: Genesis
+site_description: LLM-Driven Program Evolution Platform
+site_url: https://genesis.ai
+repo_url: https://github.com/GeorgePearse/Genesis
+repo_name: GeorgePearse/Genesis
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: teal
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.top
+    - navigation.indexes
+    - content.code.copy
+    - content.tabs.link
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [.]
+          options:
+            show_root_heading: true
+            show_source: true
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting_started.md
+  - Guides:
+    - Configuration: configuration.md
+    - WebUI: webui.md
+    - Local LLM Support: support_local_llm.md
+  - Developer Guide: developer_guide.md
+  - Roadmap: roadmap.md
+  - Recent Papers: papers.md
+  - API Reference:
+      - Core:
+          - Runner: api/core/runner.md
+          - Evolution Config: api/core/config.md
+      - Database: api/database.md
+      - Launch: api/launch.md
