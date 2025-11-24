@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
   ChevronDown,
-  ChevronRight,
   Code2,
   GitBranch,
   Activity,
@@ -48,7 +47,8 @@ const viewOptions = [
 
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const { state, dispatch, loadDatabase } = useGenesis();
-  const [sidebarSection, setSidebarSection] = useState('analysis');
+  const [analysisOpen, setAnalysisOpen] = useState(true);
+  const [viewOpen, setViewOpen] = useState(true);
   const [taskOpen, setTaskOpen] = useState(false);
   const [resultOpen, setResultOpen] = useState(false);
 
@@ -83,10 +83,10 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   };
 
   return (
-    <div className="w-72 bg-gray-900 border-r border-gray-800 flex flex-col">
+    <div className="w-72 bg-gray-900 border-r border-gray-800 flex flex-col h-full">
       {/* Logo/Title */}
-      <div className="px-5 py-6 border-b border-gray-800">
-        <div className="flex items-center gap-3 mb-3">
+      <div className="px-5 py-5 border-b border-gray-800 flex-shrink-0">
+        <div className="flex items-center gap-3 mb-2">
           <div className="p-2 bg-blue-600 rounded-lg">
             <Zap className="w-5 h-5 text-white" />
           </div>
@@ -96,16 +96,16 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       </div>
 
       {/* Task and Result Dropdowns */}
-      <div className="px-5 py-5 space-y-4 border-b border-gray-800">
+      <div className="px-5 py-4 space-y-3 border-b border-gray-800 flex-shrink-0">
         {/* Task Dropdown */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
             Task
           </label>
           <div className="relative">
             <button
               onClick={() => setTaskOpen(!taskOpen)}
-              className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-800 hover:bg-gray-750 transition-colors rounded-lg border border-gray-700"
+              className="w-full flex items-center justify-between px-3 py-2 bg-gray-800 hover:bg-gray-750 transition-colors rounded-lg border border-gray-700"
             >
               <span className="text-sm text-gray-300 truncate">
                 {state.selectedTask || 'Select a task...'}
@@ -113,12 +113,12 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
               <ChevronDown className="w-4 h-4 text-gray-500 flex-shrink-0 ml-2" />
             </button>
             {taskOpen && tasks.length > 0 && (
-              <div className="absolute z-10 w-full mt-2 bg-gray-800 rounded-lg border border-gray-700 max-h-48 overflow-y-auto shadow-lg">
+              <div className="absolute z-10 w-full mt-1 bg-gray-800 rounded-lg border border-gray-700 max-h-48 overflow-y-auto shadow-lg">
                 {tasks.map((task) => (
                   <button
                     key={task}
                     onClick={() => handleTaskSelect(task)}
-                    className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg ${
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg ${
                       state.selectedTask === task
                         ? 'bg-gray-700 text-white'
                         : 'text-gray-400'
@@ -133,14 +133,14 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         </div>
 
         {/* Result Dropdown */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
             Result
           </label>
           <div className="relative">
             <button
               onClick={() => setResultOpen(!resultOpen)}
-              className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-800 hover:bg-gray-750 transition-colors rounded-lg border border-gray-700"
+              className="w-full flex items-center justify-between px-3 py-2 bg-gray-800 hover:bg-gray-750 transition-colors rounded-lg border border-gray-700"
             >
               <span className="text-sm text-gray-300 truncate">
                 {state.selectedResult || 'Select a result...'}
@@ -148,12 +148,12 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
               <ChevronDown className="w-4 h-4 text-gray-500 flex-shrink-0 ml-2" />
             </button>
             {resultOpen && results.length > 0 && (
-              <div className="absolute z-10 w-full mt-2 bg-gray-800 rounded-lg border border-gray-700 max-h-48 overflow-y-auto shadow-lg">
+              <div className="absolute z-10 w-full mt-1 bg-gray-800 rounded-lg border border-gray-700 max-h-48 overflow-y-auto shadow-lg">
                 {results.map((result) => (
                   <button
                     key={result.path}
                     onClick={() => handleResultSelect(result.name)}
-                    className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg ${
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg ${
                       state.selectedResult === result.name
                         ? 'bg-gray-700 text-white'
                         : 'text-gray-400'
@@ -168,46 +168,44 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         </div>
 
         {/* Search Button */}
-        <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 transition-colors rounded-lg text-sm font-medium mt-2">
+        <button className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 transition-colors rounded-lg text-sm font-medium">
           <Search className="w-4 h-4" />
           Search
         </button>
       </div>
 
-      {/* Navigation Sections */}
-      <div className="flex-1 overflow-y-auto py-2">
+      {/* Navigation Sections - Scrollable area that fills remaining space */}
+      <div className="flex-1 overflow-y-auto">
         {/* Analysis Section */}
-        <div className="px-5 py-3">
+        <div className="px-4 pt-4 pb-2">
           <button
-            onClick={() =>
-              setSidebarSection(sidebarSection === 'analysis' ? '' : 'analysis')
-            }
-            className="flex items-center justify-between w-full text-left hover:bg-gray-800 px-3 py-2 rounded-lg transition-colors"
+            onClick={() => setAnalysisOpen(!analysisOpen)}
+            className="flex items-center justify-between w-full text-left hover:bg-gray-800 px-2 py-1.5 rounded-lg transition-colors"
           >
-            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
               Analysis
             </span>
-            <ChevronRight
+            <ChevronDown
               className={`w-4 h-4 text-gray-500 transition-transform ${
-                sidebarSection === 'analysis' ? 'rotate-90' : ''
+                analysisOpen ? '' : '-rotate-90'
               }`}
             />
           </button>
-          {sidebarSection === 'analysis' && (
-            <div className="mt-3 space-y-1.5">
+          {analysisOpen && (
+            <div className="mt-2 space-y-0.5">
               {analysisOptions.map((option) => {
                 const Icon = option.icon;
                 return (
                   <button
                     key={option.name}
                     onClick={() => setActiveTab(option.name)}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                       activeTab === option.name
                         ? 'bg-blue-600 text-white'
                         : 'hover:bg-gray-800 text-gray-400 hover:text-gray-200'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-4 h-4 flex-shrink-0" />
                     <span className="text-sm">{option.name}</span>
                   </button>
                 );
@@ -216,38 +214,36 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           )}
         </div>
 
-        {/* View Section */}
-        <div className="px-5 py-3">
+        {/* View Options Section */}
+        <div className="px-4 pt-2 pb-4">
           <button
-            onClick={() =>
-              setSidebarSection(sidebarSection === 'view' ? '' : 'view')
-            }
-            className="flex items-center justify-between w-full text-left hover:bg-gray-800 px-3 py-2 rounded-lg transition-colors"
+            onClick={() => setViewOpen(!viewOpen)}
+            className="flex items-center justify-between w-full text-left hover:bg-gray-800 px-2 py-1.5 rounded-lg transition-colors"
           >
-            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
               View Options
             </span>
-            <ChevronRight
+            <ChevronDown
               className={`w-4 h-4 text-gray-500 transition-transform ${
-                sidebarSection === 'view' ? 'rotate-90' : ''
+                viewOpen ? '' : '-rotate-90'
               }`}
             />
           </button>
-          {sidebarSection === 'view' && (
-            <div className="mt-3 space-y-1.5">
+          {viewOpen && (
+            <div className="mt-2 space-y-0.5">
               {viewOptions.map((option) => {
                 const Icon = option.icon;
                 return (
                   <button
                     key={option.name}
                     onClick={() => setActiveTab(option.name)}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                       activeTab === option.name
                         ? 'bg-blue-600 text-white'
                         : 'hover:bg-gray-800 text-gray-400 hover:text-gray-200'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-4 h-4 flex-shrink-0" />
                     <span className="text-sm">{option.name}</span>
                   </button>
                 );
@@ -257,9 +253,9 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         </div>
       </div>
 
-      {/* Status Bar */}
-      <div className="px-5 py-4 border-t border-gray-800">
-        <div className="flex items-center justify-between mb-2">
+      {/* Status Bar - Always at bottom */}
+      <div className="px-5 py-3 border-t border-gray-800 flex-shrink-0">
+        <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             <span className="text-xs text-gray-500">Connected</span>
