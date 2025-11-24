@@ -62,6 +62,7 @@ nav:
     - Configuration: configuration.md
     - WebUI: webui.md
     - Local LLM Support: support_local_llm.md
+  - Evolutionary Approach: evolutionary_approach.md
   - Developer Guide: developer_guide.md
   - Roadmap: roadmap.md
   - Recent Papers: papers.md
