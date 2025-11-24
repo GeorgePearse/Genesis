@@ -30,6 +30,7 @@
 
 ## Commit & Pull Request Guidelines
 - Follow Conventional Commit prefixes observed in history (`feat:`, `fix:`, `docs:`); keep the subject under 72 chars.
+- Every new branch should start with `v2-` (e.g., `v2-feature-name`, `v2-bug-fix`).
 - Squash noise commits locally; PRs should include a one-paragraph summary plus CLI or screenshot evidence for UI changes.
 - Link tracking issues and note required credentials or configs in the PR body.
 - Request review once CI (formatting + pytest) is green; highlight remaining risks or TODOs inline.

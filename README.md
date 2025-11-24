@@ -30,6 +30,8 @@ The framework supports **parallel evaluation of candidates** locally, on a Slurm
 |-------|-------------|-------------------|
 | 🚀 **[Getting Started](docs/getting_started.md)** | Installation, basic usage, and examples | Setup, first evolution run, core concepts |
 | 📓 **[Tutorial Notebook](examples/genesis_tutorial.ipynb)** | Interactive walkthrough of Genesis features | Hands-on examples, configuration, best practices |
+| 🛠️ **[Creating Tasks](docs/creating_tasks.md)** | Guide to creating custom tasks | File structure, evaluation scripts, configuration |
+| ☁️ **[E2B Integration](docs/e2b_integration.md)** | Running evaluations in cloud sandboxes | Setup, configuration, dependencies |
 | ⚙️ **[Configuration](docs/configuration.md)** | Comprehensive configuration reference | All config options, optimization settings, advanced features |
 | 🎨 **[WebUI](docs/webui.md)** | Interactive visualization and monitoring | Real-time tracking, result analysis, debugging tools |
 | 🗺️ **[Roadmap](ROADMAP.md)** | Future plans and language support | Supported languages, execution backends, planned features |

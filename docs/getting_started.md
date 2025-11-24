@@ -333,6 +333,12 @@ The `run_genesis_eval` function returns three values:
 
 ## Advanced Usage
 
+### E2B Cloud Sandboxes
+
+Genesis supports running evaluations in secure cloud sandboxes using E2B. This allows for massive parallelism and isolation.
+
+See the [E2B Integration Guide](e2b_integration.md) for setup and usage instructions.
+
 ### Environment Management for Local Jobs
 
 When running jobs locally, you have several options for managing Python environments:
@@ -364,6 +370,8 @@ This is particularly useful when:
 2. **Initial Solution**: Write `initial.py` with `EVOLVE-BLOCK` markers
 3. **Evaluation Script**: Create `evaluate.py` with validation logic
 4. **Variant Config**: Combine settings in `configs/variant/my_variant.yaml`
+
+For a detailed walkthrough, see the [Creating Custom Tasks Guide](creating_tasks.md).
 
 For detailed configuration options, parameter explanations, and advanced patterns, see the [Configuration Guide](configuration.md).
 
