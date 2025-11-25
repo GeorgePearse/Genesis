@@ -153,7 +153,7 @@ GEMINI_MODELS = {
         "input_price": 0.1 / M,
         "output_price": 0.4 / M,
     },
-    "gemini-3-pro-preview" : {
+    "gemini-3-pro-preview": {
         "input_price": 2.0 / M,
         "output_price": 12.0 / M,
     },
@@ -218,3 +218,38 @@ REASONING_BEDROCK_MODELS = [
     "bedrock/us.anthropic.claude-3-7-sonnet-20250219-v1:0",
     "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0",
 ]
+
+OPENROUTER_MODELS = {
+    "openrouter/anthropic/claude-3.5-sonnet": {
+        "input_price": 3.0 / M,
+        "output_price": 15.0 / M,
+    },
+    "openrouter/anthropic/claude-3.5-haiku": {
+        "input_price": 0.8 / M,
+        "output_price": 4.0 / M,
+    },
+    "openrouter/openai/gpt-4o": {
+        "input_price": 2.5 / M,
+        "output_price": 10.0 / M,
+    },
+    "openrouter/openai/gpt-4o-mini": {
+        "input_price": 0.15 / M,
+        "output_price": 0.6 / M,
+    },
+    "openrouter/google/gemini-2.5-flash": {
+        "input_price": 0.15 / M,
+        "output_price": 0.6 / M,
+    },
+    "openrouter/google/gemini-2.5-pro": {
+        "input_price": 1.25 / M,
+        "output_price": 10.0 / M,
+    },
+    "openrouter/meta-llama/llama-3.3-70b-instruct": {
+        "input_price": 0.3 / M,
+        "output_price": 0.3 / M,
+    },
+    "openrouter/deepseek/deepseek-r1": {
+        "input_price": 0.55 / M,
+        "output_price": 2.19 / M,
+    },
+}

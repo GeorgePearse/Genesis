@@ -481,4 +481,10 @@ Now that you have Genesis running:
 3. **Create Custom Tasks**: Adapt the framework to your specific optimization problems
 4. **Scale Up**: Deploy on clusters for large-scale evolutionary experiments
 
+### Future Development
+
+We are actively working on improving the local development experience:
+- **Terminal UI**: A rich terminal dashboard to monitor evolution without a browser.
+- **Unified Launcher**: Single command to launch evolution and UI together.
+
 Happy evolving! 🧬

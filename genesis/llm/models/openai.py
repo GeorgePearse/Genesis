@@ -1,6 +1,6 @@
 import backoff
 import openai
-from .pricing import OPENAI_MODELS
+from .pricing import OPENAI_MODELS, OPENROUTER_MODELS
 from .result import QueryResult
 import logging
 
@@ -110,8 +110,21 @@ def query_openai(
                 new_content += i[0] + ":" + i[1] + "\n"
             new_msg_history.append({"role": "assistant", "content": new_content})
 
-    input_cost = OPENAI_MODELS[model]["input_price"] * input_tokens
-    output_cost = OPENAI_MODELS[model]["output_price"] * output_tokens
+    # Handle pricing for both OpenAI and OpenRouter models
+    if model in OPENAI_MODELS:
+        pricing = OPENAI_MODELS[model]
+    else:
+        # For OpenRouter, the model name is like "openai/gpt-4o-mini"
+        # but pricing is stored under "openrouter/openai/gpt-4o-mini"
+        openrouter_key = f"openrouter/{model}"
+        if openrouter_key in OPENROUTER_MODELS:
+            pricing = OPENROUTER_MODELS[openrouter_key]
+        else:
+            logger.warning(f"Unknown model for pricing: {model}, using zero cost")
+            pricing = {"input_price": 0, "output_price": 0}
+
+    input_cost = pricing["input_price"] * input_tokens
+    output_cost = pricing["output_price"] * output_tokens
     result = QueryResult(
         content=content,
         msg=msg,

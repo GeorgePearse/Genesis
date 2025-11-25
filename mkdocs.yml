@@ -60,6 +60,7 @@ nav:
   - Getting Started: getting_started.md
   - Guides:
     - Configuration: configuration.md
+    - Available LLMs: available_llms.md
     - Logging & Analytics: logging.md
     - ClickHouse Integration: clickhouse.md
     - WebUI: webui.md

@@ -249,6 +249,13 @@ class EvolutionRunner:
         self.best_program_id: Optional[str] = None
         self.next_generation_to_submit = 0
 
+        # Generate unique run ID for ClickHouse tracking
+        self.run_id = (
+            f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
+        )
+        # Track which generations have been logged to ClickHouse
+        self.logged_generations = set()
+
         if resuming_run:
             self.completed_generations = self.db.last_iteration + 1
             self.next_generation_to_submit = self.completed_generations
@@ -301,6 +308,49 @@ class EvolutionRunner:
             f"Starting evolution with {max_jobs} parallel jobs, "
             f"target: {target_gens} generations"
         )
+
+        # Log evolution run start to ClickHouse
+        try:
+            from genesis.utils.clickhouse_logger import ch_logger
+            import json
+
+            # Convert configs to JSON-serializable dicts
+            def make_serializable(obj):
+                """Convert dataclass/OmegaConf objects to JSON-serializable dicts."""
+                if hasattr(obj, "__dict__"):
+                    obj_dict = (
+                        obj.__dict__ if not hasattr(obj, "asdict") else asdict(obj)
+                    )
+                else:
+                    obj_dict = asdict(obj)
+                # Convert any remaining OmegaConf objects
+                return json.loads(json.dumps(obj_dict, default=str))
+
+            config_dict = {
+                "evolution": make_serializable(self.evo_config),
+                "database": make_serializable(self.db_config),
+                "job": make_serializable(self.job_config),
+            }
+
+            # Extract task name from results directory or use unknown
+            task_name = "unknown"
+            if self.results_dir:
+                # Try to extract from path like "results/genesis_squeeze_hnsw/..."
+                parts = str(self.results_dir).split("/")
+                if len(parts) >= 2:
+                    task_name = parts[-2]  # Get the task directory name
+
+            ch_logger.log_evolution_run(
+                run_id=self.run_id,
+                task_name=task_name,
+                config=config_dict,
+                population_size=target_gens,  # This will be updated per generation
+                cluster_type=self.evo_config.job_type,
+                database_path=str(self.db_config.db_path),
+                status="running",
+            )
+        except Exception as e:
+            logger.warning(f"Failed to log evolution run start to ClickHouse: {e}")
 
         # First, run generation 0 sequentially to populate the database
         if self.completed_generations == 0 and target_gens > 0:
@@ -366,6 +416,18 @@ class EvolutionRunner:
         end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         logger.info(f"Evolution run ended at {end_time}")
         logger.info("=" * 80)
+
+        # Update evolution run status in ClickHouse
+        try:
+            from genesis.utils.clickhouse_logger import ch_logger
+
+            ch_logger.update_evolution_run(
+                run_id=self.run_id,
+                status="completed",
+                total_generations=self.completed_generations,
+            )
+        except Exception as e:
+            logger.warning(f"Failed to update evolution run in ClickHouse: {e}")
 
     def generate_initial_program(self):
         """Generate initial program with LLM, with retries."""
@@ -546,6 +608,33 @@ class EvolutionRunner:
         )
 
         self.db.add(db_program, verbose=True)
+
+        # Log initial individual to ClickHouse
+        try:
+            from genesis.utils.clickhouse_logger import ch_logger
+            import hashlib
+
+            code_hash = hashlib.sha256(evaluated_code.encode()).hexdigest()[:16]
+
+            ch_logger.log_individual(
+                run_id=self.run_id,
+                individual_id=db_program.id,
+                generation=0,
+                parent_id="",
+                mutation_type=patch_type,
+                fitness_score=combined_score,
+                combined_score=combined_score,
+                metrics={"public": public_metrics, "private": private_metrics},
+                is_pareto=True,  # Gen 0 always on Pareto
+                api_cost=api_costs,
+                embed_cost=e_cost,
+                novelty_cost=0.0,
+                code_hash=code_hash,
+                code_size=len(evaluated_code),
+            )
+        except Exception as e:
+            logger.warning(f"Failed to log initial individual to ClickHouse: {e}")
+
         if self.llm_selection is not None:
             self.llm_selection.set_baseline_score(
                 db_program.combined_score if correct_val else 0.0,
@@ -606,14 +695,94 @@ class EvolutionRunner:
         # Check for contiguous generations from 0 up to last_gen
         completed_up_to = 0
         for i in range(last_gen + 1):
-            if self.db.get_programs_by_generation(i):
+            programs = self.db.get_programs_by_generation(i)
+            if programs:
                 completed_up_to = i + 1
+
+                # Log this generation to ClickHouse if not already logged
+                if i not in self.logged_generations:
+                    self._log_generation_to_clickhouse(i, programs)
+                    self.logged_generations.add(i)
             else:
                 # Found a gap, so contiguous sequence is broken
                 self.completed_generations = completed_up_to
                 return
 
         self.completed_generations = completed_up_to
+
+    def _log_generation_to_clickhouse(self, generation: int, programs: List[Program]):
+        """Log generation statistics and Pareto front to ClickHouse."""
+        try:
+            from genesis.utils.clickhouse_logger import ch_logger
+
+            # Calculate generation stats
+            scores = [p.combined_score for p in programs]
+            best_score = max(scores) if scores else 0.0
+            avg_score = sum(scores) / len(scores) if scores else 0.0
+
+            # Calculate total costs for this generation
+            total_cost = 0.0
+            for p in programs:
+                if p.metadata:
+                    total_cost += p.metadata.get("api_costs", 0.0)
+                    total_cost += p.metadata.get("embed_cost", 0.0)
+                    total_cost += p.metadata.get("novelty_cost", 0.0)
+                    total_cost += p.metadata.get("meta_cost", 0.0)
+
+            # Get Pareto frontier (correct programs only)
+            correct_programs = [p for p in programs if p.correct]
+            pareto_programs = self._compute_pareto_frontier(correct_programs)
+            pareto_size = len(pareto_programs)
+
+            # Log generation stats
+            ch_logger.log_generation(
+                run_id=self.run_id,
+                generation=generation,
+                num_individuals=len(programs),
+                best_score=best_score,
+                avg_score=avg_score,
+                pareto_size=pareto_size,
+                total_cost=total_cost,
+                metadata={
+                    "correct_count": len(correct_programs),
+                    "incorrect_count": len(programs) - len(correct_programs),
+                },
+            )
+
+            # Log Pareto frontier
+            if pareto_programs:
+                pareto_data = []
+                for p in pareto_programs:
+                    pareto_data.append(
+                        {
+                            "individual_id": p.id,
+                            "fitness_score": p.combined_score,
+                            "combined_score": p.combined_score,
+                            "metrics": {
+                                "public": p.public_metrics or {},
+                                "private": p.private_metrics or {},
+                            },
+                        }
+                    )
+
+                ch_logger.log_pareto_front(
+                    run_id=self.run_id,
+                    generation=generation,
+                    pareto_individuals=pareto_data,
+                )
+
+        except Exception as e:
+            logger.warning(f"Failed to log generation {generation} to ClickHouse: {e}")
+
+    def _compute_pareto_frontier(self, programs: List[Program]) -> List[Program]:
+        """Simple Pareto frontier computation based on combined_score (single objective)."""
+        if not programs:
+            return []
+
+        # For single-objective, just return all programs (or top N)
+        # In multi-objective case, you'd compute non-dominated set
+        # For now, return all correct programs as they're all potentially "Pareto-optimal"
+        return programs
 
     def _submit_new_job(self):
         """Submit a new job to the queue."""
@@ -863,6 +1032,67 @@ class EvolutionRunner:
             },
         )
         self.db.add(db_program, verbose=True)
+
+        # Log individual to ClickHouse
+        try:
+            from genesis.utils.clickhouse_logger import ch_logger
+            import hashlib
+
+            # Compute code hash
+            code_hash = hashlib.sha256(evaluated_code.encode()).hexdigest()[:16]
+
+            # Get parent program for fitness delta
+            parent_program = self.db.get(job.parent_id) if job.parent_id else None
+            parent_score = parent_program.combined_score if parent_program else 0.0
+            fitness_delta = combined_score - parent_score
+
+            # Determine mutation type from metadata
+            mutation_type = (
+                job.meta_patch_data.get("patch_type", "unknown")
+                if job.meta_patch_data
+                else "unknown"
+            )
+
+            # Check if on Pareto frontier (will be updated later if needed)
+            is_pareto = False  # Will be set properly when Pareto is computed
+
+            ch_logger.log_individual(
+                run_id=self.run_id,
+                individual_id=db_program.id,
+                generation=job.generation,
+                parent_id=job.parent_id or "",
+                mutation_type=mutation_type,
+                fitness_score=combined_score,
+                combined_score=combined_score,
+                metrics={"public": public_metrics, "private": private_metrics},
+                is_pareto=is_pareto,
+                api_cost=job.meta_patch_data.get("api_costs", 0.0)
+                if job.meta_patch_data
+                else 0.0,
+                embed_cost=e_cost,
+                novelty_cost=n_cost,
+                code_hash=code_hash,
+                code_size=len(evaluated_code),
+            )
+
+            # Log lineage if has parent
+            if job.parent_id:
+                edit_summary = (
+                    job.meta_patch_data.get("patch_description", "")
+                    if job.meta_patch_data
+                    else ""
+                )
+                ch_logger.log_lineage(
+                    run_id=self.run_id,
+                    child_id=db_program.id,
+                    parent_id=job.parent_id,
+                    generation=job.generation,
+                    mutation_type=mutation_type,
+                    fitness_delta=fitness_delta,
+                    edit_summary=edit_summary[:500],  # Truncate to reasonable length
+                )
+        except Exception as e:
+            logger.warning(f"Failed to log individual/lineage to ClickHouse: {e}")
 
         # Add the evaluated program to meta memory tracking
         self.meta_summarizer.add_evaluated_program(db_program)

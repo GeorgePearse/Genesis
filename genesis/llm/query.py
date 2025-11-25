@@ -14,6 +14,7 @@ from .models.pricing import (
     REASONING_GEMINI_MODELS,
     REASONING_AZURE_MODELS,
     REASONING_BEDROCK_MODELS,
+    OPENROUTER_MODELS,
 )
 from .models import (
     query_anthropic,
@@ -176,6 +177,7 @@ def sample_model_kwargs(
             or kwargs_dict["model_name"] in REASONING_BEDROCK_MODELS
             or kwargs_dict["model_name"] in DEEPSEEK_MODELS
             or kwargs_dict["model_name"] in REASONING_DEEPSEEK_MODELS
+            or kwargs_dict["model_name"].startswith("openrouter/")
         ):
             kwargs_dict["max_tokens"] = random.choice(max_tokens)
         else:
@@ -194,10 +196,18 @@ def query(
     **kwargs,
 ) -> QueryResult:
     """Query the LLM."""
-    client, model_name = get_client_llm(
+    client, model_name_processed = get_client_llm(
         model_name, structured_output=output_model is not None
     )
-    if model_name in CLAUDE_MODELS.keys() or "anthropic" in model_name:
+    if model_name.startswith("openrouter/"):
+        # OpenRouter uses the OpenAI-compatible client
+        query_fn = query_openai
+        # We need to pass the processed model name (e.g., anthropic/claude-3-5-sonnet)
+        # to the query function, but get_client_llm already returns it.
+        # However, query_openai expects the model_name argument to be passed to client.chat.completions.create
+        # so we should use the one returned by get_client_llm.
+        model_name = model_name_processed
+    elif model_name in CLAUDE_MODELS.keys() or "anthropic" in model_name:
         query_fn = query_anthropic
     elif model_name in OPENAI_MODELS.keys():
         query_fn = query_openai
