@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import Sidebar from './Sidebar';
 import MainContent from './MainContent';
 import { useGenesis } from '../context/GenesisContext';
