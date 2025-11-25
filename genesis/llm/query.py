@@ -23,6 +23,7 @@ from .models import (
     QueryResult,
 )
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -206,6 +207,7 @@ def query(
         query_fn = query_gemini
     else:
         raise ValueError(f"Model {model_name} not supported.")
+    start_time = time.time()
     result = query_fn(
         client,
         model_name,
@@ -216,4 +218,30 @@ def query(
         model_posteriors=model_posteriors,
         **kwargs,
     )
+    end_time = time.time()
+
+    # Log to ClickHouse
+    try:
+        from genesis.utils.clickhouse_logger import ch_logger
+
+        log_messages = []
+        if system_msg:
+            log_messages.append({"role": "system", "content": system_msg})
+        if msg_history:
+            log_messages.extend(msg_history)
+        log_messages.append({"role": "user", "content": msg})
+
+        ch_logger.log_llm_interaction(
+            model=model_name,
+            messages=log_messages,
+            response=result.content if result else "None",
+            cost=result.cost
+            if result and hasattr(result, "cost") and result.cost
+            else 0.0,
+            execution_time=end_time - start_time,
+            metadata=kwargs,
+        )
+    except Exception as e:
+        logger.warning(f"Failed to log to ClickHouse: {e}")
+
     return result

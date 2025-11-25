@@ -70,6 +70,16 @@ See `examples/mask_to_seg_rust/` for a complete Rust example.
 
 ### Medium Priority
 
+#### Benchmarking & Meta-Optimization
+
+##### Standardized Assessment
+- [ ] **Benchmark Suite**: Develop a diverse set of canonical tasks (algorithmic, control, creative) to rigorously compare evolution strategies (e.g., standard evolutionary algorithms vs. LLM-driven evolution vs. FunSearch).
+- [ ] **Comparative Metrics**: Track sample efficiency (fitness vs. evaluations), wall-clock time, and token cost to benchmark against baselines like random search or standard genetic algorithms.
+
+##### Bayesian & Hybrid Optimization
+- [ ] **Hyperparameter Tuning**: Integrate Bayesian Optimization (e.g., Ax/BoTorch) to automatically tune evolutionary hyperparameters (population size, mutation rate, temperature) or prompt strategies.
+- [ ] **Meta-Guidance**: Explore using Bayesian Optimization to guide the evolutionary search itself, such as selecting optimal parents or dynamically adjusting the exploration-exploitation balance based on trajectory analysis.
+
 #### Language-Specific LLM Optimization Hints
 - [ ] **Rust**: Ownership/borrowing patterns, SIMD intrinsics, zero-copy
 - [ ] **C++**: Template metaprogramming, cache optimization, vectorization
@@ -87,6 +97,22 @@ See `examples/mask_to_seg_rust/` for a complete Rust example.
 - [ ] Job priority queuing
 - [ ] Preemption for higher-fitness candidates
 - [ ] Distributed island model across backends
+
+#### Prompt Engineering & Optimization
+- [ ] **Automated Prompt Optimization (DSPy)**: Integrate [DSPy](https://github.com/stanfordnlp/dspy) to automatically optimize the system prompts and mutation instructions. This moves away from hand-crafted prompts to a systematic, compile-time optimization process that maximizes evolutionary success rates.
+- [ ] **Reinforcement Learning (RL) Integration**: Implement RL loops to treat the LLM as an agent, rewarding successful mutations and penalizing regressions. This could involve techniques like PPO or GRPO (Group Relative Policy Optimization) to finetune the mutation operators on the fly based on the specific fitness landscape of the current problem.
+    - **PPO (Proximal Policy Optimization)**: A stable policy gradient method that avoids large, destructive updates by clipping the objective function, making it safer for online fine-tuning of the mutation agent.
+    - **GRPO (Group Relative Policy Optimization)**: An optimization technique that removes the need for a critic model by estimating baselines from a group of outputs, significantly reducing memory usage while maintaining performance in reasoning tasks.
+
+#### Knowledge Retrieval & Vector Search
+- [ ] **Qdrant Integration**: Integrate [Qdrant](https://qdrant.tech/) (or similar vector DB) to index the full history of evolved programs using code embeddings.
+- [ ] **Semantic Parent Selection**: Enable selecting parents based on semantic similarity to a target description or to fill gaps in the embedding space (semantic novelty).
+- [ ] **Cross-Island Retrieval**: Allow islands to query relevant solutions from other islands based on semantic relevance rather than just fitness, facilitating better cross-pollination.
+- [ ] **Natural Language Code Search**: Enable users to search the solution archive using natural language queries (e.g., "find code that uses SIMD for matrix multiplication") via the WebUI.
+- [ ] **Graph-Based Lineage Analysis**: Store the evolutionary tree in a graph database to enable complex lineage queries (e.g., "Find the common ancestor of all successful solutions" or "Visualize the mutation pathway that led to this specific optimization").
+    - *Benefits*: Efficiently model and query the full ancestry, detect cycles, analyze mutation efficacy, and represent code structure dependencies.
+    - *Options*: [Neo4j](https://neo4j.com/), [FalkorDB](https://www.falkordb.com/), [ArangoDB](https://www.arangodb.com/).
+    - *Note*: While **Qdrant** is excellent for semantic similarity and dense retrieval (finding code with similar *meaning*), a graph store is better suited for structural and relational queries (finding code with specific *ancestry*). A hybrid approach using both is often ideal for a complete knowledge system.
 
 ### Future Exploration
 

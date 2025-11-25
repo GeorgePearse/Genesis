@@ -158,9 +158,7 @@ class EvolutionRunner:
 
         # Initialize database and scheduler
         db_config.db_path = str(db_path)
-        embedding_model_to_use = (
-            evo_config.embedding_model or "text-embedding-3-small"
-        )
+        embedding_model_to_use = evo_config.embedding_model or "text-embedding-3-small"
         self.db = ProgramDatabase(
             config=db_config, embedding_model=embedding_model_to_use
         )
@@ -763,6 +761,23 @@ class EvolutionRunner:
                 f"queue size: {len(self.running_jobs)}"
             )
 
+        # ClickHouse Log
+        try:
+            from genesis.utils.clickhouse_logger import ch_logger
+
+            ch_logger.log_action(
+                action_type="job_submitted",
+                details={
+                    "job_id": str(job_id),
+                    "generation": current_gen,
+                    "parent_id": parent_id,
+                    "exec_fname": exec_fname,
+                },
+                metadata=meta_patch_data,
+            )
+        except Exception as e:
+            logger.warning(f"Failed to log job submission to ClickHouse: {e}")
+
     def _check_completed_jobs(self) -> List[RunningJob]:
         """Check for completed jobs and return them."""
         completed = []
@@ -918,6 +933,31 @@ class EvolutionRunner:
 
         self.db.save()
         self._update_best_solution()
+
+        # ClickHouse Log
+        try:
+            from genesis.utils.clickhouse_logger import ch_logger
+
+            ch_logger.log_action(
+                action_type="job_completed",
+                details={
+                    "job_id": str(job.job_id),
+                    "generation": job.generation,
+                    "correct": correct_val,
+                    "combined_score": combined_score,
+                    "api_costs": job.meta_patch_data.get("api_costs", 0)
+                    if job.meta_patch_data
+                    else 0,
+                    "embed_cost": job.embed_cost,
+                    "novelty_cost": job.novelty_cost,
+                },
+                metadata={
+                    "public_metrics": public_metrics,
+                    "private_metrics": private_metrics,
+                },
+            )
+        except Exception as e:
+            logger.warning(f"Failed to log job completion to ClickHouse: {e}")
 
         # Note: Meta summarization check is now done after completed generations
         # are updated in the main loop to ensure correct timing

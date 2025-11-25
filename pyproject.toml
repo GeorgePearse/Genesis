@@ -48,10 +48,11 @@ dependencies = [
     "psycopg[binary]==3.2.3",
     "google-generativeai",
     "mcp>=1.0.0",
+    "clickhouse-connect>=0.7.0",
 ]
 
 [tool.setuptools]
-script-files = ["genesis/genesis_launch", "genesis/genesis_visualize", "genesis/genesis_mcp"]
+script-files = ["genesis/genesis_launch", "genesis/genesis_mcp"]
 
 [tool.setuptools.packages.find]
 include = ["genesis", "genesis.*"]

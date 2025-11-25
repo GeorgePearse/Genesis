@@ -60,6 +60,8 @@ nav:
   - Getting Started: getting_started.md
   - Guides:
     - Configuration: configuration.md
+    - Logging & Analytics: logging.md
+    - ClickHouse Integration: clickhouse.md
     - WebUI: webui.md
     - Local LLM Support: support_local_llm.md
   - Evolutionary Approach: evolutionary_approach.md
@@ -72,3 +74,4 @@ nav:
           - Evolution Config: api/core/config.md
       - Database: api/database.md
       - Launch: api/launch.md
+      - ClickHouse Schema: clickhouse_schema_reference.md

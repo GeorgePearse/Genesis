@@ -92,6 +92,7 @@ Create a `.env` file in the project root with your API keys:
 # .env file
 OPENAI_API_KEY=sk-proj-your-key-here
 ANTHROPIC_API_KEY=your-anthropic-key-here  # Optional
+CLICKHOUSE_URL=http://default:@localhost:8123/default  # Optional: For advanced logging
 ```
 
 ### Step 4: Verify Installation
