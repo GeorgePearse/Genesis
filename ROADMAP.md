@@ -82,11 +82,64 @@ See `examples/mask_to_seg_rust/` for a complete Rust example.
 - [ ] Evolve both sides of FFI boundaries
 - [ ] Cross-language fitness evaluation
 
+#### Database Modernization (ClickHouse Backend)
+- [ ] **Full ClickHouse Migration**: Move the operational backend (program storage, metadata) entirely to ClickHouse.
+  - Replace SQLite `programs` table with ClickHouse `MergeTree` engines.
+  - Implement real-time inserts/updates using ClickHouse best practices (ReplacingMergeTree or CollapsingMergeTree).
+  - Eliminate the need for local SQLite files, enabling stateless execution nodes.
+- [ ] **Data Normalization**: Design a normalized ClickHouse schema to replace the current JSON-heavy structure.
+  - Extract metrics into dedicated columns/tables for fast analytical queries.
+  - Store lineage and relationships efficiently.
+- [ ] **Distributed Storage**: Leverage ClickHouse's distributed tables for multi-node scaling.
+
 #### Enhanced Parallelism
 - [ ] Adaptive `max_parallel_jobs` based on backend capacity
 - [ ] Job priority queuing
 - [ ] Preemption for higher-fitness candidates
 - [ ] Distributed island model across backends
+
+#### Reasoning & Verification (Inspired by OpenR)
+- [ ] **Process Reward Models for Code**
+  - Train PRMs to evaluate intermediate code states (not just final fitness)
+  - Discriminative models: Score quality of each code modification step
+  - Generative models: Predict likelihood of successful evolution path
+  - Dataset: Collect step-by-step evolution traces with fitness improvements
+  
+- [ ] **Self-Improving Task Prompts (DSPy Integration)**
+  - **MIPRO-style Instruction Optimization**: Implement an "outer loop" that treats the `task_sys_msg` as a variable.
+    - Run short evolution "micro-sprints" (e.g., 5 generations).
+    - Use a meta-LLM to propose variations of the task prompt.
+    - Select the prompt phrasing that yields the highest average population fitness.
+  - **Bootstrap Few-Shot Selection**: Instead of just random "Top-K" inspirations, use an optimizer to select the *most effective* historical mutations to show as few-shot examples.
+    - Learn which types of examples (e.g., "small refactor" vs "algorithm swap") lead to better LLM outputs for the specific task.
+  - **Signature-based Prompts**: Abstract prompts into Input/Output signatures (e.g., `Code -> ImprovedCode`), allowing the system to automatically format and structure the prompt implementation.
+
+- [ ] **Advanced Search Strategies**
+  - [ ] MCTS for Code Evolution: Tree search over mutation space
+    - Each node is a code variant
+    - Use PRM to guide expansion (UCB-like selection)
+    - Rollouts via LLM-predicted fitness estimates
+  - [ ] Beam Search Evolution: Keep top-k candidates per generation
+  - [ ] Best-of-N with Learned Verifiers: Generate N mutations, select via PRM
+  - [ ] rStar-style Mutual Reasoning: Cross-verify mutations via multiple LLMs
+  
+- [ ] **Pre-Execution Code Verification**
+  - [ ] Static analysis-based fitness prediction (before running code)
+  - [ ] Syntax/type correctness filters to avoid wasted evaluations
+  - [ ] Complexity analysis (estimated runtime before execution)
+  - [ ] LLM-based "plausibility scoring" for proposed mutations
+  
+- [ ] **Test-Time Compute Optimization**
+  - [ ] Adaptive search budget: Spend more compute on promising candidates
+  - [ ] Early stopping for unpromising evolution branches
+  - [ ] Dynamic temperature/sampling based on search progress
+  - [ ] Meta-learning: When to use expensive vs cheap LLMs
+  
+- [ ] **Self-Supervised Learning from Evolution**
+  - [ ] Train reward models from evolution history (no human labels)
+  - [ ] Learn which mutations tend to improve fitness
+  - [ ] Distill successful evolution strategies into smaller models
+  - [ ] Fine-tune LLMs on high-fitness code transitions
 
 ### Future Exploration
 
@@ -99,12 +152,93 @@ See `examples/mask_to_seg_rust/` for a complete Rust example.
 | **Zig** | Systems programming with safety | Medium |
 | **Mojo** | Python syntax + systems performance | Hard (new language) |
 | **Haskell** | Functional algorithm optimization | Medium |
+| **Assembly (x86/ARM)** | Extreme low-level optimization | Hard |
 
 #### Advanced Features
 - [ ] **Auto-vectorization verification** - Ensure SIMD is actually used
 - [ ] **Formal verification integration** - Prove evolved code correctness
 - [ ] **Energy-aware optimization** - Minimize power consumption
 - [ ] **Hardware-specific tuning** - ARM vs x86, specific CPU features
+
+#### MCP Server Expansion
+Genesis already has a basic MCP (Model Context Protocol) server ([`genesis/mcp_server.py`](genesis/mcp_server.py)) that exposes evolution capabilities to MCP clients like Claude Desktop, Cursor, and other AI coding assistants.
+
+**Current Capabilities** (✅ Implemented):
+- List recent evolution experiments
+- Get experiment metrics and status
+- Launch new evolution experiments
+- Read best discovered code
+
+**Planned Expansions**:
+- [ ] **Real-time Experiment Monitoring**
+  - Stream generation progress updates
+  - Live fitness score graphs
+  - Mutation success/failure notifications
+  - WebSocket-based real-time updates
+
+- [ ] **Interactive Evolution Control**
+  - Pause/resume experiments
+  - Adjust parameters mid-evolution (temperature, mutation rate)
+  - Manual mutation injection ("try this specific change")
+  - Island management (merge/split islands)
+
+- [ ] **Code Analysis Tools**
+  - Compare code variants side-by-side
+  - Explain fitness differences between variants
+  - Generate mutation lineage trees
+  - Semantic code search across evolution history
+
+- [ ] **Advanced Experiment Management**
+  - Clone and fork experiments
+  - A/B test different evolution strategies
+  - Batch experiment launching (grid search over configs)
+  - Export experiments to reproducible formats
+
+- [ ] **Integration with AI Coding Assistants**
+  - Natural language experiment queries ("Show me the fastest circle packing solution")
+  - AI-assisted config generation
+  - Automatic fitness function creation from specs
+  - Code suggestion based on evolution insights
+
+- [ ] **Multi-User Collaboration**
+  - Share experiments across team members
+  - Collaborative fitness function design
+  - Distributed compute pooling
+  - Experiment leaderboards
+
+**Use Cases**:
+- Use Claude Desktop to manage Genesis experiments without leaving your IDE
+- Query evolution history: "What mutations improved performance on circle packing?"
+- Launch experiments from natural language: "Evolve a faster HNSW implementation for 1000 generations"
+- Get AI insights: "Why did this mutation succeed?" (analyze with Claude + evolution data)
+
+**Example MCP Configuration** (`.mcp.json`):
+```json
+{
+  "mcpServers": {
+    "genesis": {
+      "type": "stdio",
+      "command": "python3",
+      "args": ["-m", "genesis.mcp_server"],
+      "cwd": "/path/to/Genesis"
+    }
+  }
+}
+```
+
+#### Memory & State Management
+- [ ] **Letta/MemGPT Integration** 
+  - Long-term memory across evolution sessions
+  - Remember successful mutation strategies
+  - Learn from past experiments
+  - Cross-experiment knowledge transfer
+  - Hierarchical memory (working + long-term)
+  
+- [ ] **Vector Database for Code History**
+  - Qdrant/Milvus integration for semantic code search
+  - Embed all evolved code variants
+  - Find similar solutions from past experiments
+  - Novelty detection via embedding distance
 
 ---
 
@@ -120,6 +254,7 @@ See `examples/mask_to_seg_rust/` for a complete Rust example.
 - [x] Novelty search and diversity maintenance
 - [x] Multi-LLM support (OpenAI, Anthropic, Google, DeepSeek)
 - [x] Hydra configuration system
+- [x] Basic MCP server for AI assistant integration
 
 ---
 

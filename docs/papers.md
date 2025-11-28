@@ -298,6 +298,33 @@ Key insight: Self-improvement works especially well for "agentic" tasks where th
 
 ---
 
+### OpenR: Advanced Reasoning Framework
+
+**Paper**: [OpenR: An Open Source Framework for Advanced Reasoning with Large Language Models](https://arxiv.org/abs/2410.09671) (2024)
+
+**GitHub**: [openreasoner/openr](https://github.com/openreasoner/openr)
+
+**Website**: [openreasoner.github.io](https://openreasoner.github.io/)
+
+An open-source framework for advanced reasoning with LLMs, combining process supervision, reward models, and search strategies:
+
+- **Process Supervision**: Automated process supervision (OmegaPRM) for improving mathematical reasoning
+- **Reward Models**: Both discriminative PRM and generative reward model training
+- **Search Strategies**: Greedy search, Best-of-N, Beam search, MCTS, rStar (mutual reasoning)
+- **RL Training**: Online policy training with APPO, GRPO, TPPO algorithms
+- **Test-time Scaling**: Systematic exploration of test-time computation vs model parameters
+
+**Key Results**:
+
+- Process reward models (Math-psa) outperform outcome-based verifiers
+- MCTS-based search improves reasoning performance over greedy decoding
+- Test-time compute scaling can be more effective than parameter scaling
+- Open-source datasets and models for mathematical reasoning
+
+**Applications**: Mathematical reasoning (MATH dataset), multi-step problem solving, self-verification.
+
+---
+
 ## Surveys and Reviews
 
 ### Evolutionary Computation in the Era of Large Language Models

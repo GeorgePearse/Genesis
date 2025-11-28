@@ -51,6 +51,9 @@ dependencies = [
     "clickhouse-connect>=0.7.0",
 ]
 
+[project.scripts]
+genesis = "genesis.cli:main"
+
 [tool.setuptools]
 script-files = ["genesis/genesis_launch", "genesis/genesis_mcp"]
 

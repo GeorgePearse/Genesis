@@ -63,6 +63,12 @@ class EvolutionConfig:
     novelty_llm_kwargs: dict = field(default_factory=lambda: {})
     use_text_feedback: bool = False
 
+    # Git tracking and strategy metadata
+    git_commit_sha: Optional[str] = None
+    git_dirty: bool = False
+    git_branch: Optional[str] = None
+    strategy_name: str = "default"
+
 
 @dataclass
 class RunningJob:
@@ -668,14 +674,7 @@ class EvolutionRunner:
                         db_program.metadata = {}
                     db_program.metadata["meta_cost"] = meta_cost
                     # Update the program in the database with the new metadata
-                    import json
-
-                    metadata_json = json.dumps(db_program.metadata)
-                    self.db.cursor.execute(
-                        "UPDATE programs SET metadata = ? WHERE id = ?",
-                        (metadata_json, db_program.id),
-                    )
-                    self.db.conn.commit()
+                    self.db._update_program_metadata(db_program.id, db_program.metadata)
 
         # Save meta memory state after each job completion
         self._save_meta_memory()
@@ -1120,14 +1119,7 @@ class EvolutionRunner:
                         db_program.metadata = {}
                     db_program.metadata["meta_cost"] = meta_cost
                     # Update the program in the database with the new metadata
-                    import json
-
-                    metadata_json = json.dumps(db_program.metadata)
-                    self.db.cursor.execute(
-                        "UPDATE programs SET metadata = ? WHERE id = ?",
-                        (metadata_json, db_program.id),
-                    )
-                    self.db.conn.commit()
+                    self.db._update_program_metadata(db_program.id, db_program.metadata)
 
         if self.llm_selection is not None:
             if "model_name" not in db_program.metadata:

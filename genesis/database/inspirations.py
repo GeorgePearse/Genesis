@@ -1,5 +1,5 @@
 import logging
-import sqlite3
+import random
 from abc import ABC, abstractmethod
 from typing import Optional, Callable, Any, List, Set
 
@@ -7,54 +7,39 @@ logger = logging.getLogger(__name__)
 
 
 class ContextSelectorStrategy(ABC):
-    """Abstract base class for context selection strategies."""
-
     def __init__(
         self,
-        cursor: sqlite3.Cursor,
-        conn: sqlite3.Connection,
+        client: Any,
         config: Any,
-        get_program_func: Callable[[str], Any],
-        best_program_id: Optional[str] = None,
-        get_island_idx_func: Optional[Callable[[str], Optional[int]]] = None,
-        program_from_row_func: Optional[Callable[[sqlite3.Row], Any]] = None,
+        get_program_func: Callable,
+        best_program_id=None,
+        get_island_idx_func=None,
     ):
-        self.cursor = cursor
-        self.conn = conn
+        self.client = client
         self.config = config
         self.get_program = get_program_func
         self.best_program_id = best_program_id
         self.get_island_idx = get_island_idx_func
-        self.program_from_row = program_from_row_func
 
     @abstractmethod
     def sample_context(self, parent: Any, n: int) -> List[Any]:
-        """Sample context programs for the given parent."""
         pass
 
 
 class ArchiveInspirationSelector(ContextSelectorStrategy):
-    """Strategy for selecting archive inspirations."""
-
     def sample_context(self, parent: Any, n: int) -> List[Any]:
-        """Sample archive inspirations based on elites, best program, and random selection."""
         if n <= 0:
             return []
-        if not hasattr(self.config, "elite_selection_ratio"):
-            raise ConnectionError(
-                "Config missing elite_selection_ratio for inspiration sampling."
-            )
 
         parent_island_idx = (
             self.get_island_idx(parent.id) if self.get_island_idx else None
         )
-
-        inspirations: List[Any] = []
-        insp_ids: Set[str] = {parent.id}
+        inspirations = []
+        insp_ids = {parent.id}
 
         enforce_separation = getattr(self.config, "enforce_island_separation", False)
 
-        # 1. Best program (only if correct)
+        # 1. Best program
         if self.best_program_id and self.best_program_id not in insp_ids:
             prog = self.get_program(self.best_program_id)
             if prog and prog.correct:
@@ -67,219 +52,117 @@ class ArchiveInspirationSelector(ContextSelectorStrategy):
                     insp_ids.add(prog.id)
 
         # 2. Elites from parent's island
-        num_elites = max(0, int(n * self.config.elite_selection_ratio))
+        num_elites = max(0, int(n * getattr(self.config, "elite_selection_ratio", 0.3)))
         if num_elites > 0 and len(inspirations) < n and parent_island_idx is not None:
-            self.cursor.execute(
-                """
+            query = f"""
                 SELECT p.id FROM programs p
                 JOIN archive a ON p.id = a.program_id
-                WHERE p.island_idx = ? AND p.correct = 1
-                ORDER BY p.combined_score DESC
-                LIMIT ?
-                """,
-                (parent_island_idx, num_elites + len(insp_ids)),
-            )
-            for row in self.cursor.fetchall():
+                WHERE p.island_idx = {parent_island_idx} AND p.correct = 1
+                ORDER BY p.combined_score DESC LIMIT {num_elites + len(insp_ids)}
+            """
+            res = self.client.query(query)
+            for row in res.result_rows:
                 if len(inspirations) >= n:
                     break
-                prog = self.get_program(row["id"])
-                if prog and prog.id not in insp_ids:
-                    inspirations.append(prog)
-                    insp_ids.add(prog.id)
-
-        # 3. Random correct programs from parent's island
-        if len(inspirations) < n and parent_island_idx is not None:
-            needed = n - len(inspirations)
-            if needed > 0:
-                placeholders_rand = ",".join("?" * len(insp_ids))
-                sql_rand = f"""
-                    SELECT p.id FROM programs p
-                    JOIN archive a ON p.id = a.program_id
-                    WHERE p.island_idx = ? AND p.correct = 1
-                    AND p.id NOT IN ({placeholders_rand})
-                    ORDER BY RANDOM() LIMIT ?
-                """
-                params_rand = [parent_island_idx] + list(insp_ids) + [needed]
-
-                self.cursor.execute(sql_rand, params_rand)
-                for row in self.cursor.fetchall():
-                    prog = self.get_program(row["id"])
-                    if prog:  # id is already not in insp_ids from query
-                        inspirations.append(prog)
-
-        # 4. Fallback to global random sampling if not enough inspirations
-        # found on island
-        if len(inspirations) < n and not enforce_separation:
-            needed = n - len(inspirations)
-            if needed > 0:
-                placeholders_rand = ",".join("?" * len(insp_ids))
-                sql_rand = f"""SELECT p.id FROM programs p
-                                 JOIN archive a ON p.id = a.program_id
-                                 WHERE p.correct = 1
-                                 AND p.id NOT IN ({placeholders_rand})
-                                 ORDER BY RANDOM() LIMIT ?
-                                 """
-                params_rand = list(insp_ids) + [needed]
-                self.cursor.execute(sql_rand, params_rand)
-                for row in self.cursor.fetchall():
-                    prog = self.get_program(row["id"])
+                pid = row[0]
+                if pid not in insp_ids:
+                    prog = self.get_program(pid)
                     if prog:
                         inspirations.append(prog)
+                        insp_ids.add(pid)
 
-        if inspirations:
-            inspiration_details = [
-                f"{p.id} (Gen: {p.generation}, "
-                f"Score: {p.combined_score or 0.0:.4f}, "
-                f"Island: {p.island_idx})"
-                for p in inspirations
-            ]
-            logger.info(
-                f"Sampled {len(inspirations)} archive inspirations: "
-                f"{inspiration_details}"
-            )
+        # 3. Random correct from parent's island
+        if len(inspirations) < n and parent_island_idx is not None:
+            needed = n - len(inspirations)
+            exclude_ids = ", ".join([f"'{pid}'" for pid in insp_ids])
+            query = f"""
+                SELECT p.id FROM programs p
+                JOIN archive a ON p.id = a.program_id
+                WHERE p.island_idx = {parent_island_idx} AND p.correct = 1
+                AND p.id NOT IN ({exclude_ids})
+                ORDER BY rand() LIMIT {needed}
+            """
+            res = self.client.query(query)
+            for row in res.result_rows:
+                prog = self.get_program(row[0])
+                if prog:
+                    inspirations.append(prog)
+
+        # 4. Fallback global
+        if len(inspirations) < n and not enforce_separation:
+            needed = n - len(inspirations)
+            exclude_ids = ", ".join([f"'{pid}'" for pid in insp_ids])
+            query = f"""
+                SELECT p.id FROM programs p
+                JOIN archive a ON p.id = a.program_id
+                WHERE p.correct = 1 AND p.id NOT IN ({exclude_ids})
+                ORDER BY rand() LIMIT {needed}
+            """
+            res = self.client.query(query)
+            for row in res.result_rows:
+                prog = self.get_program(row[0])
+                if prog:
+                    inspirations.append(prog)
+
         return inspirations
 
 
 class TopKInspirationSelector(ContextSelectorStrategy):
-    """Strategy for selecting top-k inspirations from archive."""
-
     def sample_context(
         self, parent: Any, excluded_programs: List[Any], k: int
     ) -> List[Any]:
-        """
-        Get the top-k best performing programs from the archive excluding the parent
-        and already selected archive inspirations.
-        """
         if k <= 0:
             return []
 
-        enforce_separation = getattr(self.config, "enforce_island_separation", False)
         parent_island_idx = parent.island_idx
+        enforce_separation = getattr(self.config, "enforce_island_separation", False)
 
         if enforce_separation and parent_island_idx is None:
-            logger.debug(
-                f"Parent {parent.id} has no island and island separation is enforced, "
-                "skipping top-k inspirations."
-            )
             return []
 
-        # Build set of IDs to exclude (parent + archive inspirations)
-        excluded_ids: Set[str] = {parent.id}
-        excluded_ids.update(prog.id for prog in excluded_programs)
+        excluded_ids = {parent.id}
+        excluded_ids.update(p.id for p in excluded_programs)
+        exclude_str = ", ".join([f"'{pid}'" for pid in excluded_ids])
 
-        if not hasattr(self.config, "archive_size") or self.config.archive_size <= 0:
-            return []
-
-        # Query archive for programs
-        placeholders = ",".join("?" * len(excluded_ids))
-
+        query = "SELECT p.id FROM programs p JOIN archive a ON p.id = a.program_id WHERE p.correct = 1"
         if enforce_separation and parent_island_idx is not None:
-            # Only search within parent's island
-            query = f"""
-                SELECT p.*
-                FROM programs p
-                JOIN archive a ON p.id = a.program_id
-                WHERE p.island_idx = ? AND p.id NOT IN ({placeholders}) 
-                AND p.correct = 1
-            """
-            params = [parent_island_idx] + list(excluded_ids)
-            search_scope = f"island {parent_island_idx}"
-        else:
-            # Search globally across all islands
-            query = f"""
-                SELECT p.*
-                FROM programs p
-                JOIN archive a ON p.id = a.program_id
-                WHERE p.id NOT IN ({placeholders}) 
-                AND p.correct = 1
-            """
-            params = list(excluded_ids)
-            search_scope = "all islands"
+            query += f" AND p.island_idx = {parent_island_idx}"
 
-        self.cursor.execute(query, params)
-        archive_rows = self.cursor.fetchall()
+        if exclude_str:
+            query += f" AND p.id NOT IN ({exclude_str})"
 
-        if not archive_rows:
-            logger.debug(
-                f"No eligible archived programs for top-k selection on {search_scope}."
-            )
-            return []
+        query += " ORDER BY p.combined_score DESC LIMIT 20"  # fetch more to filter
 
-        archive_programs = [
-            self.program_from_row(row) for row in archive_rows if self.program_from_row
-        ]
-        archive_programs = [p for p in archive_programs if p]
+        res = self.client.query(query)
+        candidates = []
+        for row in res.result_rows:
+            prog = self.get_program(row[0])
+            if prog:
+                candidates.append(prog)
 
-        if not archive_programs:
-            return []
-
-        # Sort by performance - prioritize combined_score, then average metrics
-        def sort_key(prog: Any) -> float:
-            if prog.combined_score is not None:
-                return prog.combined_score
-            elif prog.public_metrics:
-                return sum(prog.public_metrics.values()) / len(prog.public_metrics)
-            else:
-                return -float("inf")
-
-        sorted_programs = sorted(archive_programs, key=sort_key, reverse=True)
-
-        # Return top-k programs
-        top_k = sorted_programs[:k]
-
-        if top_k:
-            inspiration_details = [
-                f"{p.id} (Gen: {p.generation}, "
-                f"Score: {p.combined_score or 0.0:.4f}, "
-                f"Island: {p.island_idx})"
-                for p in top_k
-            ]
-            logger.info(
-                f"Selected {len(top_k)} top-k inspirations from archive on "
-                f"{search_scope}: {inspiration_details}"
-            )
-
-        return top_k
+        # Sort in python (already sorted by score, but verify)
+        candidates.sort(key=lambda p: p.combined_score or 0.0, reverse=True)
+        return candidates[:k]
 
 
 class CombinedContextSelector:
-    """Combined context selector that handles both archive inspirations and top-k selection."""
-
     def __init__(
         self,
-        cursor: sqlite3.Cursor,
-        conn: sqlite3.Connection,
-        config: Any,
-        get_program_func: Callable[[str], Any],
-        best_program_id: Optional[str] = None,
-        get_island_idx_func: Optional[Callable[[str], Optional[int]]] = None,
-        program_from_row_func: Optional[Callable[[sqlite3.Row], Any]] = None,
+        client,
+        config,
+        get_program_func,
+        best_program_id=None,
+        get_island_idx_func=None,
+        program_from_row_func=None,
     ):
         self.archive_selector = ArchiveInspirationSelector(
-            cursor=cursor,
-            conn=conn,
-            config=config,
-            get_program_func=get_program_func,
-            best_program_id=best_program_id,
-            get_island_idx_func=get_island_idx_func,
-            program_from_row_func=program_from_row_func,
+            client, config, get_program_func, best_program_id, get_island_idx_func
         )
         self.topk_selector = TopKInspirationSelector(
-            cursor=cursor,
-            conn=conn,
-            config=config,
-            get_program_func=get_program_func,
-            best_program_id=best_program_id,
-            get_island_idx_func=get_island_idx_func,
-            program_from_row_func=program_from_row_func,
+            client, config, get_program_func, best_program_id, get_island_idx_func
         )
 
-    def sample_context(
-        self, parent: Any, num_archive: int, num_topk: int
-    ) -> tuple[List[Any], List[Any]]:
-        """Sample both archive inspirations and top-k inspirations."""
-        archive_inspirations = self.archive_selector.sample_context(parent, num_archive)
-        top_k_inspirations = self.topk_selector.sample_context(
-            parent, archive_inspirations, num_topk
-        )
-        return archive_inspirations, top_k_inspirations
+    def sample_context(self, parent, num_archive, num_topk):
+        archive_insp = self.archive_selector.sample_context(parent, num_archive)
+        top_k_insp = self.topk_selector.sample_context(parent, archive_insp, num_topk)
+        return archive_insp, top_k_insp

@@ -302,8 +302,10 @@ Launch the WebUI alongside your evolution experiment:
 # Start your evolution experiment
 genesis_launch variant=circle_packing_example
 
-# In another terminal, launch the WebUI
-genesis_visualize --port 8888 --open
+# In another terminal, start the frontend
+cd genesis/webui/frontend
+npm install
+npm run dev
 ```
 
 For detailed WebUI documentation, see the [WebUI Guide](docs/webui.md).

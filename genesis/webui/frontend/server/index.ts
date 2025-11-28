@@ -36,6 +36,10 @@ interface DatabaseInfo {
   name: string;
   actual_path: string;
   sort_key?: string;
+  stats?: {
+    total: number;
+    working: number;
+  };
 }
 
 interface MetaFile {
@@ -122,11 +126,32 @@ app.get('/list_databases', async (req, res) => {
       const parentDir = path.dirname(relativePath);
       const filename = path.basename(file, path.extname(file));
 
+      // Get stats for this database
+      let stats = { total: 0, working: 0 };
+      try {
+        const db = new Database(file, { readonly: true });
+        try {
+          const totalRow = db.prepare('SELECT COUNT(*) as count FROM programs').get() as { count: number };
+          const workingRow = db.prepare('SELECT COUNT(*) as count FROM programs WHERE correct = 1').get() as { count: number };
+          stats = {
+            total: totalRow.count,
+            working: workingRow.count,
+          };
+        } catch (e) {
+          console.error(`[SERVER] Error querying stats for ${file}:`, e);
+        } finally {
+          db.close();
+        }
+      } catch (e) {
+        console.error(`[SERVER] Error opening database ${file}:`, e);
+      }
+
       return {
         path: `${taskName}/${relativePath}`,
         name: `${filename} - ${parentDir}`,
         actual_path: relativePath,
         sort_key: extractSortKey(relativePath),
+        stats,
       };
     });
 

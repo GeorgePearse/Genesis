@@ -44,12 +44,7 @@ This guide explains how to run the Genesis Evolution Platform using Docker and D
 The Docker setup includes:
 
 - **Backend Service** (`genesis-backend`): Python 3.12 application running the Genesis evolution framework and web UI
-- **PostgreSQL Service** (`genesis-postgres`): PostgreSQL 16 database (ready for future integration)
 - **Persistent Volumes**: Data and results are stored in `./data` and `./results` directories
-
-### Current Database Implementation
-
-**Note:** The Genesis codebase currently uses SQLite for data storage. The PostgreSQL container is included in the Docker Compose setup for future migration but is not yet integrated with the application. See [PostgreSQL Migration](#postgresql-migration) for details.
 
 ## Services
 
@@ -63,23 +58,9 @@ The backend container runs:
 **Environment Variables:**
 - `GENESIS_DATA_DIR`: Directory for database files (default: `/app/data`)
 - `GENESIS_RESULTS_DIR`: Directory for results (default: `/app/results`)
-- `DATABASE_URL`: PostgreSQL connection string (for future use)
 - `OPENAI_API_KEY`: OpenAI API key
 - `ANTHROPIC_API_KEY`: Anthropic API key
 - `E2B_API_KEY`: E2B cloud sandbox API key (optional)
-
-### PostgreSQL Service
-
-PostgreSQL 16 database prepared for future integration.
-
-**Environment Variables:**
-- `POSTGRES_DB`: Database name (default: `genesis`)
-- `POSTGRES_USER`: Database user (default: `genesis`)
-- `POSTGRES_PASSWORD`: Database password (default: `changeme_secure_password`)
-- `POSTGRES_PORT`: External port mapping (default: `5432`)
-
-**Data Persistence:**
-Database data is stored in a Docker volume named `postgres_data`.
 
 ## Volume Mounts
 
@@ -145,14 +126,8 @@ docker-compose down
 
 ### View logs:
 ```bash
-# All services
-docker-compose logs -f
-
 # Backend only
 docker-compose logs -f backend
-
-# PostgreSQL only
-docker-compose logs -f postgres
 ```
 
 ### Rebuild after code changes:
@@ -238,11 +213,10 @@ docker-compose up -d
 
 ### Port Already in Use
 
-If port 8000 or 5432 is already in use, change the port mapping in `.env`:
+If port 8000 is already in use, change the port mapping in `.env`:
 
 ```bash
 GENESIS_WEBUI_PORT=8080
-POSTGRES_PORT=5433
 ```
 
 ### Out of Memory
@@ -265,10 +239,6 @@ Common issues:
 - Port conflicts
 - Insufficient disk space
 
-### Database Connection Issues
-
-The application currently uses SQLite, so PostgreSQL connection issues can be ignored. The database files are stored in `./data/` directory.
-
 ### Permission Issues
 
 If you encounter permission errors with mounted volumes:
@@ -280,51 +250,6 @@ sudo chown -R $(whoami):$(id -gn) data/ results/
 # Or run with proper permissions
 docker-compose run --user $(id -u):$(id -g) backend bash
 ```
-
-## PostgreSQL Migration
-
-### Current State
-
-Genesis now has PostgreSQL support infrastructure in place:
-
-- ✅ PostgreSQL 16 container configured
-- ✅ Database adapter layer (`genesis/database/adapter.py`)
-- ✅ PostgreSQL schema initialization (`docker/init-db.sql`)
-- ✅ Environment-based database selection
-- 🔧 Core Genesis code still uses SQLite directly
-
-**See [POSTGRES.md](POSTGRES.md) for detailed PostgreSQL integration documentation.**
-
-### Quick PostgreSQL Setup
-
-The PostgreSQL database is automatically initialized when you start the containers:
-
-```bash
-# Configure DATABASE_URL in .env
-DATABASE_URL=postgresql://genesis:password@postgres:5432/genesis
-
-# Start services
-docker-compose up -d
-
-# Verify PostgreSQL is running
-docker-compose exec postgres psql -U genesis -d genesis -c "\dt"
-```
-
-### Migration Path
-
-The full PostgreSQL integration requires refactoring ~2000 lines in `genesis/database/dbase.py` to use the adapter layer. This is an ongoing effort. Current status:
-
-**Phase 1 (Complete)**: Foundation
-- Database adapter abstraction
-- PostgreSQL container setup
-- Schema initialization
-
-**Phase 2 (In Progress)**: Integration
-- Refactor `ProgramDatabase` to use adapter
-- Replace direct sqlite3 calls
-- Handle SQL dialect differences
-
-See [POSTGRES.md](POSTGRES.md) for the complete migration roadmap and contribution guidelines.
 
 ## Advanced Configuration
 
@@ -371,13 +296,11 @@ services:
 ## Security Considerations
 
 1. **Never commit `.env` file** - It contains sensitive API keys
-2. **Change default PostgreSQL password** in production
-3. **Use secrets management** for production deployments:
+2. **Use secrets management** for production deployments:
    ```bash
    docker secret create openai_key ./openai_key.txt
    ```
-4. **Restrict network access** to PostgreSQL port (5432)
-5. **Regular updates**: Rebuild images to get security patches
+3. **Regular updates**: Rebuild images to get security patches
    ```bash
    docker-compose pull
    docker-compose build --no-cache
@@ -395,5 +318,4 @@ For issues related to:
 
 - [Docker Documentation](https://docs.docker.com/)
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 - [Genesis Configuration Guide](docs/configuration.md)

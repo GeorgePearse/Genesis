@@ -33,16 +33,13 @@ This document provides a comprehensive guide for both human developers and AI ag
   ```
 
 ### WebUI Development
-- **Start WebUI Server:**
-  ```bash
-  genesis_visualize --port 8888 --open
-  ```
-- **Frontend Development (Hot Reload):**
+- **Frontend Development:**
   ```bash
   cd genesis/webui/frontend
   npm install
   npm run dev
   ```
+  The frontend connects to the backend API (or reads from the database directly). Ensure your backend or experiment is running.
 
 ### Testing & Quality Assurance
 - **Run All Tests:**

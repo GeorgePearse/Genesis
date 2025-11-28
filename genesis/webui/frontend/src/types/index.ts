@@ -51,6 +51,10 @@ export interface DatabaseInfo {
   name: string;
   actual_path?: string;
   sort_key?: string;
+  stats?: {
+    total: number;
+    working: number;
+  };
 }
 
 // Meta files
@@ -72,6 +76,10 @@ export interface TasksAndResults {
     name: string;
     path: string;
     sortKey: string;
+    stats?: {
+      total: number;
+      working: number;
+    };
   }[];
 }
 

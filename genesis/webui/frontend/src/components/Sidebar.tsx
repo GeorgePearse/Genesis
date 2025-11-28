@@ -115,13 +115,16 @@ export default function Sidebar() {
                   <button
                     key={task}
                     onClick={() => handleTaskSelect(task)}
-                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg ${
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg flex justify-between items-center ${
                       state.selectedTask === task
                         ? 'bg-gray-700 text-white'
                         : 'text-gray-400'
                     }`}
                   >
-                    {task}
+                    <span className="truncate">{task}</span>
+                    <span className="text-xs opacity-50 ml-2">
+                      {state.tasksAndResults[task]?.length || 0}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -150,13 +153,18 @@ export default function Sidebar() {
                   <button
                     key={result.path}
                     onClick={() => handleResultSelect(result.name)}
-                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg ${
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg flex justify-between items-center ${
                       state.selectedResult === result.name
                         ? 'bg-gray-700 text-white'
                         : 'text-gray-400'
                     }`}
                   >
-                    {result.name}
+                    <span className="truncate flex-1 mr-2">{result.name}</span>
+                    {result.stats && (
+                      <span className="text-xs opacity-50 font-mono">
+                        ({result.stats.working}/{result.stats.total})
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>

@@ -89,6 +89,14 @@ export default function MainContent() {
 
     const containerRect = containerRef.current.getBoundingClientRect();
     const newWidth = containerRect.right - e.clientX;
+    
+    // Debug logging
+    // console.log('Drag:', { 
+    //   clientX: e.clientX, 
+    //   containerRight: containerRect.right, 
+    //   newWidth, 
+    //   clamped: Math.max(MIN_RIGHT_PANEL_WIDTH, Math.min(MAX_RIGHT_PANEL_WIDTH, newWidth)) 
+    // });
 
     // Clamp to min/max
     const clampedWidth = Math.max(MIN_RIGHT_PANEL_WIDTH, Math.min(MAX_RIGHT_PANEL_WIDTH, newWidth));
@@ -132,6 +140,9 @@ export default function MainContent() {
   const handleDividerDoubleClick = () => {
     setRightPanelWidth(DEFAULT_RIGHT_PANEL_WIDTH);
   };
+
+  // Maximize code view state
+  const [isMaximized, setIsMaximized] = useState(false);
 
   const renderLeftPanel = () => {
     switch (activeTab) {
@@ -233,7 +244,53 @@ export default function MainContent() {
     );
   }
 
-  // Check if this tab should show split view
+  // Check if we should be in maximized code view mode
+  // This happens when a user selects a program while in the 'table-view' (Programs) tab
+  useEffect(() => {
+    if (activeTab === 'table-view' && selectedProgram) {
+      setIsMaximized(true);
+    } else if (!selectedProgram) {
+      setIsMaximized(false);
+    }
+  }, [activeTab, selectedProgram]);
+
+  // Handle exiting maximized view
+  const exitMaximized = () => {
+    useGenesis().selectProgram(null);
+    setIsMaximized(false);
+  };
+
+  // ... (existing check for SPLIT_VIEW_TABS)
+
+  // Maximized View Layout
+  if (isMaximized && activeTab === 'table-view' && selectedProgram) {
+    return (
+      <div className="flex-1 flex flex-col h-full bg-gray-950">
+        <div className="bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center gap-4">
+          <button
+            onClick={exitMaximized}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-md transition-colors"
+          >
+            ← Back to Programs
+          </button>
+          <div className="h-6 w-px bg-gray-700 mx-2" />
+          <div className="flex items-center gap-3 text-sm">
+            <span className="font-medium text-white">
+              {selectedProgram.metadata.patch_name || `Program ${selectedProgram.id}`}
+            </span>
+            <span className="text-gray-500">Gen {selectedProgram.generation}</span>
+            <span className="text-orange-400">
+              {selectedProgram.combined_score?.toFixed(4) ?? 'N/A'}
+            </span>
+          </div>
+        </div>
+        
+        <div className="flex-1 overflow-hidden p-4">
+          <CodeViewerPanel />
+        </div>
+      </div>
+    );
+  }
   const isSplitView = SPLIT_VIEW_TABS.includes(activeTab);
 
   if (!isSplitView) {
@@ -278,7 +335,7 @@ export default function MainContent() {
       {/* Split Content Area */}
       <div ref={containerRef} className="flex-1 flex overflow-hidden">
         {/* Left Panel - Main View */}
-        <div className="flex-1 p-6 overflow-auto">
+        <div className="flex-1 p-6 overflow-auto min-w-0">
           {renderLeftPanel()}
         </div>
 
@@ -286,7 +343,7 @@ export default function MainContent() {
         <div
           onMouseDown={handleDividerMouseDown}
           onDoubleClick={handleDividerDoubleClick}
-          className={`w-1 bg-gray-800 hover:bg-blue-500 cursor-col-resize transition-colors flex-shrink-0 group relative ${
+          className={`w-1 bg-gray-800 hover:bg-blue-500 cursor-col-resize transition-colors flex-shrink-0 group relative z-10 ${
             isDragging ? 'bg-blue-500' : ''
           }`}
           title="Drag to resize, double-click to reset"
@@ -298,7 +355,7 @@ export default function MainContent() {
         {/* Right Panel - Code/Details View */}
         <div
           style={{ width: rightPanelWidth }}
-          className="flex flex-col bg-gray-950 flex-shrink-0"
+          className={`flex flex-col bg-gray-950 flex-shrink-0 transition-[width] duration-0 ${isDragging ? 'pointer-events-none select-none' : ''}`}
         >
           {/* Right Panel Header with Node Info */}
           {selectedProgram && (

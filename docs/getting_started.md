@@ -480,6 +480,8 @@ Now that you have Genesis running:
 2. **Explore the WebUI**: See the [WebUI Guide](webui.md) to visualize how solutions evolve
 3. **Create Custom Tasks**: Adapt the framework to your specific optimization problems
 4. **Scale Up**: Deploy on clusters for large-scale evolutionary experiments
+5. **Optimize Model Selection**: Use the dynamic selection feature (`llm_dynamic_selection=ucb`) which treats picking the best LLM as a multi-armed bandit sampling problem (specifically Asymmetric UCB), automatically converging on the most effective models for your task. Other strategies like `Thompson Sampling` or `Exp3` could also be implemented for different exploration-exploitation trade-offs.
+6. **Maximized Code View**: In the WebUI, clicking on a program now opens a maximized code view for better readability. This allows you to focus entirely on the evolved solution.
 
 ### Future Development
 

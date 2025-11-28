@@ -99,6 +99,7 @@ function organizeDatabases(dbs: DatabaseInfo[]): TasksAndResults {
         name: result,
         path: db.path,
         sortKey: db.sort_key || '0',
+        stats: db.stats,
       });
     }
   });
