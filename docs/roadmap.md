@@ -73,6 +73,7 @@ See `examples/mask_to_seg_rust/` for a complete Rust example.
 #### User Experience & Observability
 - [ ] **Terminal Dashboard (TUI)**: Build an interactive Terminal User Interface (TUI) using [Textual](https://textual.textualize.io/) or `rich.live` to monitor evolution progress, view genealogy trees, and inspect best programs directly in the console. This provides a high-quality "local UI" experience without needing to spin up a separate web server.
 - [ ] **Unified Local Launcher**: Create a single command (e.g., `genesis dev`) that launches both the evolution runner and the WebUI in a coordinated way, automatically opening the browser and managing background processes for a seamless local development experience.
+- [ ] **LLM-Driven Task Setup**: Add a feature in the UI to setup tasks by talking to an LLM, allowing users to describe their problem in natural language and have the system automatically generate the initial configuration and code scaffold.
 
 #### Benchmarking & Meta-Optimization
 
