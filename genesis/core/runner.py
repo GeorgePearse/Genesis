@@ -253,16 +253,51 @@ class EvolutionRunner:
         self.best_program_id: Optional[str] = None
         self.next_generation_to_submit = 0
 
-        # Generate unique run ID for ClickHouse tracking
-        self.run_id = (
-            f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
-        )
+        # Generate unique run ID for ClickHouse tracking or resume existing
+        self.run_id = None
+        if Path(self.results_dir).exists():
+            try:
+                from genesis.utils.clickhouse_logger import ch_logger
+
+                existing_run_id = ch_logger.get_run_id_by_path(str(self.results_dir))
+                if existing_run_id:
+                    self.run_id = existing_run_id
+                    logger.info(f"Resuming existing run: {self.run_id}")
+            except Exception as e:
+                logger.warning(f"Failed to check for existing run_id: {e}")
+
+        if not self.run_id:
+            self.run_id = (
+                f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
+            )
+
         # Track which generations have been logged to ClickHouse
         self.logged_generations = set()
 
-        # Initialize generation counters (resume functionality not yet implemented for ClickHouse)
+        # If resuming, populate logged_generations from DB
+        if self.run_id:
+            try:
+                # We need to access the raw client for this check
+                # Note: db.client is exposed in ProgramDatabase
+                query = f"SELECT distinct generation FROM generations WHERE run_id = '{self.run_id}'"
+                # Check if table exists first? Or rely on try/except
+                # The tables are created by ch_logger on init, but db.client might be different instance?
+                # Actually ProgramDatabase creates its own client, but ch_logger has one too.
+                # Use db.client since we know it's connected.
+                res = self.db.client.query(query)
+                if res.result_rows:
+                    self.logged_generations = {row[0] for row in res.result_rows}
+            except Exception as e:
+                # Table might not exist yet if this is a fresh run and logger hasn't created it
+                # or if connection failed.
+                pass
+
+        # Initialize generation counters based on DB state
         self.completed_generations = 0
         self.next_generation_to_submit = 0
+
+        # Update counters to reflect existing progress (if any)
+        self._update_completed_generations()
 
         # Save experiment configuration to a YAML file
         self._save_experiment_config(evo_config, job_config, db_config)
@@ -280,6 +315,7 @@ class EvolutionRunner:
             "database_config": asdict(db_config),
             "timestamp": datetime.now().isoformat(),
             "results_directory": str(self.results_dir),
+            "run_id": self.run_id,
         }
 
         config_path = Path(self.results_dir) / "experiment_config.yaml"
@@ -676,35 +712,70 @@ class EvolutionRunner:
         """
         Update the count of completed generations from the database.
         A generation `g` is considered complete if all generations from 0..g
-        have at least one program in the database. This ensures the count
-        advances sequentially without gaps.
+        have at least one program in the database FOR THIS RUN.
         """
-        last_gen = self.db.last_iteration
+        try:
+            # Get max generation for this run
+            query = f"SELECT max(generation) FROM programs WHERE JSONExtractString(metadata, 'original_run_id') = '{self.run_id}'"
+            res = self.db.client.command(query)
+            # If no programs, res might be None or 0 depending on CH version/driver
+            # Usually None if table empty, but max() on empty set?
+            # Let's assume exception or 0.
+            last_gen = int(res) if res is not None else -1
+        except Exception as e:
+            # logger.warning(f"Failed to get max generation: {e}")
+            last_gen = -1
+
         if last_gen == -1:
             self.completed_generations = 0
+            # Don't reset next_generation_to_submit here if it was already set higher
             return
 
         # Check for contiguous generations from 0 up to last_gen
         completed_up_to = 0
         for i in range(last_gen + 1):
-            programs = self.db.get_programs_by_generation(i)
-            if programs:
+            # Check if generation i exists for this run
+            try:
+                count_query = f"SELECT count() FROM programs WHERE generation = {i} AND JSONExtractString(metadata, 'original_run_id') = '{self.run_id}'"
+                count = self.db.client.command(count_query)
+            except:
+                count = 0
+
+            if count > 0:
                 completed_up_to = i + 1
 
                 # Log this generation to ClickHouse if not already logged
                 if i not in self.logged_generations:
-                    self._log_generation_to_clickhouse(i, programs)
-                    self.logged_generations.add(i)
+                    try:
+                        prog_query = f"SELECT * FROM programs WHERE generation = {i} AND JSONExtractString(metadata, 'original_run_id') = '{self.run_id}'"
+                        prog_res = self.db.client.query(prog_query)
+                        if prog_res.result_rows:
+                            programs = [
+                                self.db._program_from_dict(
+                                    dict(zip(prog_res.column_names, row))
+                                )
+                                for row in prog_res.result_rows
+                            ]
+                            self._log_generation_to_clickhouse(i, programs)
+                            self.logged_generations.add(i)
 
-                    # Recompute clusters periodically (e.g. every 5 gens or last gen)
-                    if i % 5 == 0 or i == self.evo_config.num_generations - 1:
-                        self.db._recompute_embeddings_and_clusters()
+                            # Recompute clusters periodically (e.g. every 5 gens or last gen)
+                            if i % 5 == 0 or i == self.evo_config.num_generations - 1:
+                                self.db._recompute_embeddings_and_clusters()
+                    except Exception as e:
+                        logger.warning(f"Failed to log/process generation {i}: {e}")
             else:
                 # Found a gap, so contiguous sequence is broken
                 self.completed_generations = completed_up_to
+                self.next_generation_to_submit = max(
+                    self.next_generation_to_submit, completed_up_to
+                )
                 return
 
         self.completed_generations = completed_up_to
+        self.next_generation_to_submit = max(
+            self.next_generation_to_submit, completed_up_to
+        )
 
     def _log_generation_to_clickhouse(self, generation: int, programs: List[Program]):
         """Log generation statistics and Pareto front to ClickHouse."""
@@ -1321,8 +1392,6 @@ class EvolutionRunner:
                 system_msg=patch_sys,
                 msg_history=msg_history,
                 llm_kwargs=llm_kwargs,
-                tools=tools,
-                tool_map=tool_map,
             )
             # print(response.content)
             if response is None or response.content is None:
@@ -1376,6 +1445,31 @@ class EvolutionRunner:
                 language=self.evo_config.language,
                 verbose=False,
             )
+
+            # Check for validation errors if patch was successfully applied
+            if (
+                error_attempt is None
+                and num_applied_attempt > 0
+                and output_path_attempt
+            ):
+                validation_error = self._validate_code(
+                    str(output_path_attempt), self.evo_config.language
+                )
+                if validation_error:
+                    error_attempt = f"Code validation failed:\n{validation_error}"
+                    if self.verbose:
+                        logger.info(
+                            f"  PATCH ATTEMPT {patch_attempt + 1}/{max_patch_attempts} "
+                            f"VALIDATION FAILURE.\n{validation_error}"
+                        )
+                    # Reset success indicators so it retries
+                    num_applied_attempt = 0
+                    output_path_attempt = None
+                    # IMPORTANT: Revert or cleanup?
+                    # The file was written to output_path_attempt (main.rs).
+                    # The next attempt will overwrite it, so explicit cleanup isn't strictly necessary,
+                    # but good practice if we want to leave "failed" artifacts for inspection?
+                    # For now, we leave it, as the next successful apply will overwrite.
 
             if error_attempt is None and num_applied_attempt > 0:
                 if patch_path:  # Ensure patch_path is not None
@@ -1439,6 +1533,59 @@ class EvolutionRunner:
             self._print_metadata_table(meta_edit_data, generation)
         # Delete generation from meta_edit_data
         return code_diff, meta_edit_data, num_applied_attempt
+
+    def _validate_code(self, file_path: str, language: str) -> Optional[str]:
+        """
+        Validate the generated code using language-specific tools.
+        Returns None if valid, or an error message string if invalid.
+        """
+        import subprocess
+
+        try:
+            if language == "rust":
+                # Try compiling with rustc to check for errors
+                # -Z no-codegen is faster as it only checks analysis
+                # But -Z requires nightly. Let's stick to standard rustc which is fast enough for small files.
+                # Use --crate-type lib to avoid main function requirement if it's a library,
+                # but our programs usually have main or are standalone.
+                # "initial.rs" suggests a standalone file.
+                cmd = ["rustc", "--crate-type", "bin", "-o", "/dev/null", file_path]
+
+                # Check if clippy is available and preferred?
+                # The user mentioned "cargo clippy --pedantic".
+                # If there is no Cargo.toml, clippy might be hard to invoke on a single file without setup.
+                # But we can try rustc first.
+
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                if result.returncode != 0:
+                    # Filter output to keep it concise?
+                    return result.stderr.strip()
+
+            elif language == "python":
+                # Check syntax
+                cmd = ["python3", "-m", "py_compile", file_path]
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                if result.returncode != 0:
+                    return result.stderr.strip()
+
+            # Add other languages as needed
+
+        except subprocess.TimeoutExpired:
+            return "Validation timed out."
+        except Exception as e:
+            return f"Validation execution failed: {e}"
+
+        return None
 
     def get_code_embedding(self, exec_fname: str) -> tuple[List[float], float]:
         """Get the embedding of the code."""
