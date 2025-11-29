@@ -211,6 +211,11 @@ export function GenesisProvider({ children }: { children: ReactNode }) {
 
     try {
       const programs = await getPrograms(dbPath);
+      console.log(`Loaded ${programs.length} programs from ${dbPath}`);
+      if (programs.length > 0) {
+        console.log('Sample program embedding:', programs[0].embedding ? 'Present' : 'Missing');
+        console.log('Sample program PCA:', programs[0].embedding_pca_2d ? 'Present' : 'Missing');
+      }
       // Sort by generation and timestamp
       programs.sort((a, b) => {
         if (a.generation !== b.generation)

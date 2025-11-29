@@ -8,6 +8,9 @@ def test_embeddings_visible():
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
+        # Capture console logs
+        page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+
         # Navigate to UI
         print("Navigating to UI...")
         page.goto("http://localhost:5173")
