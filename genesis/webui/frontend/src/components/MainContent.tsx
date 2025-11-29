@@ -67,7 +67,7 @@ const MAX_RIGHT_PANEL_WIDTH = 1200;
 const DEFAULT_RIGHT_PANEL_WIDTH = 500;
 
 export default function MainContent() {
-  const { state, setRightTab } = useGenesis();
+  const { state, setRightTab, selectProgram: setProgram } = useGenesis();
   const { selectedLeftTab: activeTab, selectedRightTab, selectedProgram } = state;
 
   // Resizable panel state
@@ -207,6 +207,22 @@ export default function MainContent() {
     }
   };
 
+  // Check if we should be in maximized code view mode
+  // This happens when a user selects a program while in the 'table-view' (Programs) tab
+  useEffect(() => {
+    if (activeTab === 'table-view' && selectedProgram) {
+      setIsMaximized(true);
+    } else if (!selectedProgram) {
+      setIsMaximized(false);
+    }
+  }, [activeTab, selectedProgram]);
+
+  // Handle exiting maximized view
+  const exitMaximized = () => {
+    setProgram(null);
+    setIsMaximized(false);
+  };
+
   // If no data loaded, show empty state
   if (state.programs.length === 0) {
     return (
@@ -243,22 +259,6 @@ export default function MainContent() {
       </div>
     );
   }
-
-  // Check if we should be in maximized code view mode
-  // This happens when a user selects a program while in the 'table-view' (Programs) tab
-  useEffect(() => {
-    if (activeTab === 'table-view' && selectedProgram) {
-      setIsMaximized(true);
-    } else if (!selectedProgram) {
-      setIsMaximized(false);
-    }
-  }, [activeTab, selectedProgram]);
-
-  // Handle exiting maximized view
-  const exitMaximized = () => {
-    useGenesis().selectProgram(null);
-    setIsMaximized(false);
-  };
 
   // ... (existing check for SPLIT_VIEW_TABS)
 

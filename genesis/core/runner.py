@@ -31,6 +31,7 @@ from genesis.core.sampler import PromptSampler
 from genesis.core.summarizer import MetaSummarizer
 from genesis.core.novelty_judge import NoveltyJudge
 from genesis.logo import print_gradient_logo
+from genesis.tools.web_search import search_web
 
 FOLDER_PREFIX = "gen"
 
@@ -62,6 +63,10 @@ class EvolutionConfig:
     novelty_llm_models: Optional[List[str]] = None
     novelty_llm_kwargs: dict = field(default_factory=lambda: {})
     use_text_feedback: bool = False
+
+    # Web search
+    web_search_enabled: bool = False
+    web_search_prob: float = 0.1
 
     # Git tracking and strategy metadata
     git_commit_sha: Optional[str] = None
@@ -141,12 +146,6 @@ class EvolutionRunner:
             logger.info(f"Log file: {log_filename}")
             logger.info("=" * 80)
 
-        # Check if we are resuming a run
-        resuming_run = False
-        db_path = Path(f"{self.results_dir}/{db_config.db_path}")
-        if self.evo_config.results_dir is not None and db_path.exists():
-            resuming_run = True
-
         # Initialize LLM selection strategy
         if evo_config.llm_dynamic_selection is None:
             self.llm_selection = None
@@ -162,8 +161,7 @@ class EvolutionRunner:
         else:
             raise ValueError("Invalid llm_dynamic_selection")
 
-        # Initialize database and scheduler
-        db_config.db_path = str(db_path)
+        # Initialize database (using ClickHouse, not SQLite)
         embedding_model_to_use = evo_config.embedding_model or "text-embedding-3-small"
         self.db = ProgramDatabase(
             config=db_config, embedding_model=embedding_model_to_use
@@ -262,23 +260,9 @@ class EvolutionRunner:
         # Track which generations have been logged to ClickHouse
         self.logged_generations = set()
 
-        if resuming_run:
-            self.completed_generations = self.db.last_iteration + 1
-            self.next_generation_to_submit = self.completed_generations
-            logger.info("=" * 80)
-            logger.info("RESUMING PREVIOUS EVOLUTION RUN")
-            logger.info("=" * 80)
-            logger.info(
-                f"Resuming evolution from: {self.results_dir}\n"
-                f"Found {self.completed_generations} "
-                "previously completed generations."
-            )
-            logger.info("=" * 80)
-            self._update_best_solution()
-            # Restore meta memory state when resuming
-            self._restore_meta_memory()
-        else:
-            self.completed_generations = 0
+        # Initialize generation counters (resume functionality not yet implemented for ClickHouse)
+        self.completed_generations = 0
+        self.next_generation_to_submit = 0
 
         # Save experiment configuration to a YAML file
         self._save_experiment_config(evo_config, job_config, db_config)
@@ -352,7 +336,7 @@ class EvolutionRunner:
                 config=config_dict,
                 population_size=target_gens,  # This will be updated per generation
                 cluster_type=self.evo_config.job_type,
-                database_path=str(self.db_config.db_path),
+                database_path=str(self.results_dir),
                 status="running",
             )
         except Exception as e:
@@ -483,6 +467,12 @@ class EvolutionRunner:
                 patch_description = extract_between(
                     response.content, "<DESCRIPTION>", "</DESCRIPTION>", False
                 )
+                thought = (
+                    response.thought
+                    if response and hasattr(response, "thought")
+                    else ""
+                )
+
                 if self.evo_config.language == "python":
                     comment_char = "#"
                 else:
@@ -500,7 +490,7 @@ class EvolutionRunner:
                         f"{self.evo_config.max_patch_attempts} "
                         "SUCCESS."
                     )
-                return initial_code, patch_name, patch_description, total_costs
+                return initial_code, patch_name, patch_description, total_costs, thought
             else:  # code extraction failed
                 if self.verbose:
                     logger.info(
@@ -535,6 +525,7 @@ class EvolutionRunner:
         patch_name = "initial_program"
         patch_description = "Initial program from file."
         patch_type = "init"
+        thought = ""
 
         if self.evo_config.init_program_path:
             if self.verbose:
@@ -548,7 +539,7 @@ class EvolutionRunner:
                     "`init_program_path` not provided, "
                     "generating initial program with LLM..."
                 )
-            initial_code, patch_name, patch_description, api_costs = (
+            initial_code, patch_name, patch_description, api_costs, thought = (
                 self.generate_initial_program()
             )
             with open(exec_fname, "w", encoding="utf-8") as f:
@@ -600,6 +591,7 @@ class EvolutionRunner:
             public_metrics=public_metrics,
             private_metrics=private_metrics,
             text_feedback=text_feedback,
+            thought=thought,
             metadata={
                 "compute_time": rtime,
                 "api_costs": api_costs,
@@ -610,6 +602,7 @@ class EvolutionRunner:
                 "patch_description": patch_description,
                 "stdout_log": stdout_log,
                 "stderr_log": stderr_log,
+                "original_run_id": self.run_id,
             },
         )
 
@@ -645,7 +638,7 @@ class EvolutionRunner:
             self.llm_selection.set_baseline_score(
                 db_program.combined_score if correct_val else 0.0,
             )
-        self.db.save()
+        # ClickHouse auto-commits, no save needed
         self._update_best_solution()
 
         # Add the evaluated program to meta memory tracking
@@ -702,6 +695,10 @@ class EvolutionRunner:
                 if i not in self.logged_generations:
                     self._log_generation_to_clickhouse(i, programs)
                     self.logged_generations.add(i)
+
+                    # Recompute clusters periodically (e.g. every 5 gens or last gen)
+                    if i % 5 == 0 or i == self.evo_config.num_generations - 1:
+                        self.db._recompute_embeddings_and_clusters()
             else:
                 # Found a gap, so contiguous sequence is broken
                 self.completed_generations = completed_up_to
@@ -1021,6 +1018,9 @@ class EvolutionRunner:
             public_metrics=public_metrics,
             private_metrics=private_metrics,
             text_feedback=text_feedback,
+            thought=job.meta_patch_data.get("thought", "")
+            if job.meta_patch_data
+            else "",
             metadata={
                 "compute_time": rtime,
                 **(job.meta_patch_data or {}),
@@ -1028,6 +1028,7 @@ class EvolutionRunner:
                 "novelty_cost": n_cost,
                 "stdout_log": stdout_log,
                 "stderr_log": stderr_log,
+                "original_run_id": self.run_id,
             },
         )
         self.db.add(db_program, verbose=True)
@@ -1153,7 +1154,7 @@ class EvolutionRunner:
                     )
                     self.llm_selection.print_summary()
 
-        self.db.save()
+        # ClickHouse auto-commits, no save needed
         self._update_best_solution()
 
         # ClickHouse Log
@@ -1204,13 +1205,18 @@ class EvolutionRunner:
 
         self.best_program_id = best_program.id
 
-        source_dir = f"{self.results_dir}/{FOLDER_PREFIX}_{best_program.generation}"
+        source_dir = (
+            Path(self.results_dir) / f"{FOLDER_PREFIX}_{best_program.generation}"
+        )
         best_dir = Path(self.results_dir) / "best"
 
         if best_dir.exists():
             shutil.rmtree(best_dir)
 
-        shutil.copytree(source_dir, best_dir)
+        if source_dir.exists():
+            shutil.copytree(source_dir, best_dir)
+        else:
+            logger.warning(f"Source directory does not exist: {source_dir}")
 
         if self.verbose:
             logger.info(
@@ -1273,12 +1279,50 @@ class EvolutionRunner:
         patch_path = None
         diff_summary = {}
 
+        # Configure web search tool
+        tools = None
+        tool_map = None
+        if self.evo_config.web_search_enabled:
+            # Check if we should use search for this attempt (probabilistic)
+            # Or just enable it and let the model decide?
+            # User said "at least occasionally". Let's use the probability to enable the tool availability.
+            import random
+
+            if random.random() < self.evo_config.web_search_prob:
+                if self.verbose:
+                    logger.info("Web search enabled for this patch attempt.")
+
+                tools = [
+                    {
+                        "name": "search_web",
+                        "description": "Search the web for information, documentation, or code snippets. Use this when you need external knowledge to solve the problem.",
+                        "input_schema": {
+                            "type": "object",
+                            "properties": {
+                                "query": {
+                                    "type": "string",
+                                    "description": "The search query",
+                                },
+                                "num_results": {
+                                    "type": "integer",
+                                    "description": "Number of results to return (default 5)",
+                                    "default": 5,
+                                },
+                            },
+                            "required": ["query"],
+                        },
+                    }
+                ]
+                tool_map = {"search_web": search_web}
+
         for patch_attempt in range(max_patch_attempts):
             response = self.llm.query(
                 msg=patch_msg,
                 system_msg=patch_sys,
                 msg_history=msg_history,
                 llm_kwargs=llm_kwargs,
+                tools=tools,
+                tool_map=tool_map,
             )
             # print(response.content)
             if response is None or response.content is None:
@@ -1387,6 +1431,9 @@ class EvolutionRunner:
             **llm_kwargs,
             "llm_result": response.to_dict() if response else None,
             "diff_summary": diff_summary,
+            "thought": response.thought
+            if response and hasattr(response, "thought")
+            else "",
         }
         if self.verbose and num_applied_attempt > 0:
             self._print_metadata_table(meta_edit_data, generation)

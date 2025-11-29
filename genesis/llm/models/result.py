@@ -16,6 +16,7 @@ class QueryResult:
         input_cost: float = 0.0,
         output_cost: float = 0.0,
         thought: str = "",
+        tool_calls: Optional[List[Dict]] = None,
         model_posteriors: Optional[Dict[str, float]] = None,
     ):
         self.content = content
@@ -30,6 +31,7 @@ class QueryResult:
         self.input_cost = input_cost
         self.output_cost = output_cost
         self.thought = thought
+        self.tool_calls = tool_calls or []
         self.model_posteriors = model_posteriors or {}
 
     def to_dict(self):
@@ -46,5 +48,6 @@ class QueryResult:
             "input_cost": self.input_cost,
             "output_cost": self.output_cost,
             "thought": self.thought,
+            "tool_calls": self.tool_calls,
             "model_posteriors": self.model_posteriors,
         }

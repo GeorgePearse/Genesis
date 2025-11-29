@@ -45,11 +45,39 @@ def clean_nan_values(obj: Any) -> Any:
 
 @dataclass
 class DatabaseConfig:
-    host: str = os.getenv("CLICKHOUSE_HOST", "localhost")
-    port: int = int(os.getenv("CLICKHOUSE_PORT", 8123))
-    username: str = os.getenv("CLICKHOUSE_USER", "default")
-    password: str = os.getenv("CLICKHOUSE_PASSWORD", "")
-    database: str = os.getenv("CLICKHOUSE_DB", "default")
+    host: str = None
+    port: int = None
+    username: str = None
+    password: str = None
+    database: str = None
+    secure: bool = False
+
+    def __post_init__(self):
+        """Parse ClickHouse URL if provided, otherwise use individual env vars."""
+        import re
+
+        clickhouse_url = os.getenv("CLICKHOUSE_URL")
+
+        if clickhouse_url:
+            # Parse URL format: https://user:password@host:port or http://host:port
+            match = re.match(r"https?://([^:]+):([^@]+)@([^:]+):(\d+)", clickhouse_url)
+            if match:
+                self.username = match.group(1)
+                self.password = match.group(2)
+                self.host = match.group(3)
+                self.port = int(match.group(4))
+                self.secure = clickhouse_url.startswith("https")
+                self.database = "default"
+            else:
+                raise ValueError(f"Invalid CLICKHOUSE_URL format: {clickhouse_url}")
+        else:
+            # Use individual env vars if URL not provided
+            self.host = self.host or os.getenv("CLICKHOUSE_HOST", "localhost")
+            self.port = self.port or int(os.getenv("CLICKHOUSE_PORT", 8123))
+            self.username = self.username or os.getenv("CLICKHOUSE_USER", "default")
+            self.password = self.password or os.getenv("CLICKHOUSE_PASSWORD", "")
+            self.database = self.database or os.getenv("CLICKHOUSE_DB", "default")
+            self.secure = False
 
     num_islands: int = 4
     archive_size: int = 100
@@ -110,6 +138,7 @@ class Program:
     migration_history: List[Dict[str, Any]] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
     in_archive: bool = False
+    thought: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
         data = asdict(self)
@@ -162,9 +191,12 @@ class ProgramDatabase:
                 username=self.config.username,
                 password=self.config.password,
                 database=self.config.database,
+                secure=self.config.secure,
+                connect_timeout=30,
+                send_receive_timeout=60,
             )
             logger.info(
-                f"Connected to ClickHouse at {self.config.host}:{self.config.port}"
+                f"Connected to ClickHouse at {self.config.host}:{self.config.port} (secure={self.config.secure})"
             )
         except Exception as e:
             logger.error(f"Failed to connect to ClickHouse: {e}")
@@ -224,6 +256,14 @@ class ProgramDatabase:
             ORDER BY id
         """)
 
+        # Ensure 'thought' column exists (migration)
+        try:
+            self.client.command(
+                "ALTER TABLE programs ADD COLUMN IF NOT EXISTS thought String"
+            )
+        except Exception as e:
+            logger.warning(f"Could not add 'thought' column: {e}")
+
         # Archive table (simplified, just tracks IDs in archive)
         self.client.command("""
             CREATE TABLE IF NOT EXISTS archive (
@@ -250,22 +290,36 @@ class ProgramDatabase:
 
     def _load_metadata(self):
         try:
-            last_iter = self.client.command(
-                "SELECT value FROM metadata_store WHERE key = 'last_iteration'"
+            # Use query() with ORDER BY and LIMIT to get latest value from ReplacingMergeTree
+            last_iter_result = self.client.query(
+                "SELECT value FROM metadata_store WHERE key = 'last_iteration' ORDER BY timestamp DESC LIMIT 1"
             )
-            self.last_iteration = int(last_iter) if last_iter else 0
+            if last_iter_result.result_rows:
+                self.last_iteration = int(last_iter_result.result_rows[0][0])
+            else:
+                self.last_iteration = 0
 
-            best_id = self.client.command(
-                "SELECT value FROM metadata_store WHERE key = 'best_program_id'"
+            best_id_result = self.client.query(
+                "SELECT value FROM metadata_store WHERE key = 'best_program_id' ORDER BY timestamp DESC LIMIT 1"
             )
-            self.best_program_id = best_id if best_id and best_id != "None" else None
+            if best_id_result.result_rows:
+                best_id = best_id_result.result_rows[0][0]
+                self.best_program_id = (
+                    best_id if best_id and best_id != "None" else None
+                )
+            else:
+                self.best_program_id = None
 
-            beam_id = self.client.command(
-                "SELECT value FROM metadata_store WHERE key = 'beam_search_parent_id'"
+            beam_id_result = self.client.query(
+                "SELECT value FROM metadata_store WHERE key = 'beam_search_parent_id' ORDER BY timestamp DESC LIMIT 1"
             )
-            self.beam_search_parent_id = (
-                beam_id if beam_id and beam_id != "None" else None
-            )
+            if beam_id_result.result_rows:
+                beam_id = beam_id_result.result_rows[0][0]
+                self.beam_search_parent_id = (
+                    beam_id if beam_id and beam_id != "None" else None
+                )
+            else:
+                self.beam_search_parent_id = None
         except Exception as e:
             logger.warning(f"Failed to load metadata: {e}")
 
@@ -273,8 +327,8 @@ class ProgramDatabase:
         if self.read_only:
             return
         val_str = str(value)
-        self.client.command(
-            "INSERT INTO metadata_store (key, value) VALUES", [[key, val_str]]
+        self.client.insert(
+            "metadata_store", [[key, val_str]], column_names=["key", "value"]
         )
 
     def add(self, program: Program, verbose: bool = False) -> str:
@@ -321,6 +375,7 @@ class ProgramDatabase:
             program.island_idx if program.island_idx is not None else -1,
             json.dumps(program.migration_history),
             1 if program.in_archive else 0,
+            program.thought,
         ]
 
         self.client.insert(
@@ -351,6 +406,7 @@ class ProgramDatabase:
                 "island_idx",
                 "migration_history",
                 "in_archive",
+                "thought",
             ],
         )
 
@@ -393,7 +449,7 @@ class ProgramDatabase:
     def get(self, program_id: str) -> Optional[Program]:
         try:
             result = self.client.query(
-                f"SELECT * FROM programs WHERE id = '{program_id}' FINAL"
+                f"SELECT * FROM programs WHERE id = '{program_id}'"
             )
             if not result.result_rows:
                 return None
@@ -430,6 +486,8 @@ class ProgramDatabase:
 
         data["correct"] = bool(data.get("correct", 0))
         data["in_archive"] = bool(data.get("in_archive", 0))
+        if "thought" not in data:
+            data["thought"] = ""
 
         # Handle -1 defaults
         if data.get("island_idx") == -1:
@@ -495,10 +553,8 @@ class ProgramDatabase:
             logger.warning(
                 "Custom metric sorting in ClickHouse requires JSON extract logic. Using combined_score."
             )
-            query += " ORDER BY combined_score DESC LIMIT 1 FINAL"
-        else:
-            query += " ORDER BY combined_score DESC LIMIT 1 FINAL"
 
+        query += " ORDER BY combined_score DESC LIMIT 1"
         res = self.client.query(query)
         if res.result_rows:
             return self._program_from_dict(
@@ -510,7 +566,16 @@ class ProgramDatabase:
         self, n: int = 10, metric: str = "combined_score", correct_only: bool = False
     ) -> List[Program]:
         where = "WHERE correct = 1" if correct_only else "WHERE 1=1"
-        query = f"SELECT * FROM programs {where} ORDER BY combined_score DESC LIMIT {n} FINAL"
+        query = f"SELECT * FROM programs {where} ORDER BY combined_score DESC LIMIT {n}"
+        res = self.client.query(query)
+        return [
+            self._program_from_dict(dict(zip(res.column_names, row)))
+            for row in res.result_rows
+        ]
+
+    def get_programs_by_generation(self, generation: int) -> List[Program]:
+        """Get all programs from a specific generation."""
+        query = f"SELECT * FROM programs WHERE generation = {generation} ORDER BY combined_score DESC"
         res = self.client.query(query)
         return [
             self._program_from_dict(dict(zip(res.column_names, row)))
@@ -518,9 +583,114 @@ class ProgramDatabase:
         ]
 
     def _recompute_embeddings_and_clusters(self, num_clusters: int = 4):
-        # Similar logic but fetching/updating via ClickHouse
-        # Implementation omitted for brevity but follows same pattern
-        pass
+        try:
+            from sklearn.decomposition import PCA
+            from sklearn.cluster import KMeans
+        except ImportError:
+            logger.warning("scikit-learn not installed, skipping clustering")
+            return
+
+        # Fetch all programs with embeddings
+        query = "SELECT * FROM programs WHERE length(embedding) > 0"
+        res = self.client.query(query)
+        if not res.result_rows:
+            return
+
+        programs = [
+            self._program_from_dict(dict(zip(res.column_names, row)))
+            for row in res.result_rows
+        ]
+
+        if len(programs) < 3:
+            return
+
+        embeddings = [p.embedding for p in programs]
+        X = np.array(embeddings)
+
+        # PCA 2D
+        pca_2d = PCA(n_components=2)
+        X_2d = pca_2d.fit_transform(X)
+
+        # PCA 3D
+        pca_3d = PCA(n_components=3)
+        X_3d = pca_3d.fit_transform(X)
+
+        # KMeans
+        kmeans = KMeans(n_clusters=min(num_clusters, len(X)), n_init=10)
+        labels = kmeans.fit_predict(X)
+
+        # Update programs
+        updated_rows = []
+        for i, program in enumerate(programs):
+            program.embedding_pca_2d = X_2d[i].tolist()
+            program.embedding_pca_3d = X_3d[i].tolist()
+            program.embedding_cluster_id = int(labels[i])
+            # Update timestamp to ensure this version wins in ReplacingMergeTree
+            program.timestamp = time.time()
+
+            updated_rows.append(
+                [
+                    program.id,
+                    program.code,
+                    program.language,
+                    program.parent_id or "",
+                    json.dumps(program.archive_inspiration_ids),
+                    json.dumps(program.top_k_inspiration_ids),
+                    program.generation,
+                    program.timestamp,
+                    program.code_diff,
+                    program.combined_score,
+                    json.dumps(program.public_metrics),
+                    json.dumps(program.private_metrics),
+                    program.text_feedback,
+                    program.complexity,
+                    program.embedding,
+                    json.dumps(program.embedding_pca_2d),
+                    json.dumps(program.embedding_pca_3d),
+                    program.embedding_cluster_id,
+                    1 if program.correct else 0,
+                    program.children_count,
+                    json.dumps(program.metadata),
+                    program.island_idx if program.island_idx is not None else -1,
+                    json.dumps(program.migration_history),
+                    1 if program.in_archive else 0,
+                    program.thought,
+                ]
+            )
+
+        # Bulk insert
+        self.client.insert(
+            "programs",
+            updated_rows,
+            column_names=[
+                "id",
+                "code",
+                "language",
+                "parent_id",
+                "archive_inspiration_ids",
+                "top_k_inspiration_ids",
+                "generation",
+                "timestamp",
+                "code_diff",
+                "combined_score",
+                "public_metrics",
+                "private_metrics",
+                "text_feedback",
+                "complexity",
+                "embedding",
+                "embedding_pca_2d",
+                "embedding_pca_3d",
+                "embedding_cluster_id",
+                "correct",
+                "children_count",
+                "metadata",
+                "island_idx",
+                "migration_history",
+                "in_archive",
+                "thought",
+            ],
+        )
+        logger.info(f"Recomputed embeddings and clusters for {len(programs)} programs")
 
     def check_scheduled_operations(self):
         if self._schedule_migration:

@@ -183,31 +183,26 @@ export function GenesisProvider({ children }: { children: ReactNode }) {
 
   const stats = computeStats(state.programs);
 
-  const loadDatabases = useCallback(
-    async (force = false) => {
-      if (state.databases.length > 0 && !force) return;
+  const loadDatabases = useCallback(async (force = false) => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: null });
 
-      dispatch({ type: 'SET_LOADING', payload: true });
-      dispatch({ type: 'SET_ERROR', payload: null });
-
-      try {
-        const dbs = await listDatabases();
-        dispatch({ type: 'SET_DATABASES', payload: dbs });
-        dispatch({
-          type: 'SET_TASKS_AND_RESULTS',
-          payload: organizeDatabases(dbs),
-        });
-      } catch (error) {
-        dispatch({
-          type: 'SET_ERROR',
-          payload: error instanceof Error ? error.message : 'Unknown error',
-        });
-      } finally {
-        dispatch({ type: 'SET_LOADING', payload: false });
-      }
-    },
-    [state.databases.length]
-  );
+    try {
+      const dbs = await listDatabases();
+      dispatch({ type: 'SET_DATABASES', payload: dbs });
+      dispatch({
+        type: 'SET_TASKS_AND_RESULTS',
+        payload: organizeDatabases(dbs),
+      });
+    } catch (error) {
+      dispatch({
+        type: 'SET_ERROR',
+        payload: error instanceof Error ? error.message : 'Unknown error',
+      });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, []);
 
   const loadDatabase = useCallback(async (dbPath: string) => {
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -285,6 +280,82 @@ export function GenesisProvider({ children }: { children: ReactNode }) {
       }
     };
   }, []);
+
+  // Auto-load first database on mount
+  useEffect(() => {
+    let mounted = true;
+    
+    const autoLoad = async () => {
+      if (!mounted) return;
+      
+      try {
+        console.log('🔄 Auto-loading databases...');
+        const dbs = await listDatabases();
+        
+        if (!mounted || dbs.length === 0) {
+          console.log('⚠️  No databases found');
+          return;
+        }
+        
+        console.log(`✅ Found ${dbs.length} databases`);
+        
+        if (!mounted) return;
+        dispatch({ type: 'SET_DATABASES', payload: dbs });
+        dispatch({
+          type: 'SET_TASKS_AND_RESULTS',
+          payload: organizeDatabases(dbs),
+        });
+        
+        // Auto-select the first database (most recent)
+        const firstDb = dbs[0];
+        console.log(`🎯 Auto-loading database: ${firstDb.name}`);
+        
+        if (!mounted) return;
+        dispatch({ type: 'SET_CURRENT_DB', payload: firstDb.path });
+        dispatch({ type: 'SET_LOADING', payload: true });
+        
+        // Load programs for the first database
+        const programs = await getPrograms(firstDb.path);
+        console.log(`📦 Loaded ${programs.length} programs`);
+        
+        if (!mounted) return;
+        
+        // Sort by generation and timestamp
+        programs.sort((a, b) => {
+          if (a.generation !== b.generation)
+            return a.generation - b.generation;
+          return a.timestamp - b.timestamp;
+        });
+        
+        // Add iter_id
+        const genCounters: Record<number, number> = {};
+        programs.forEach((p) => {
+          if (!genCounters[p.generation]) genCounters[p.generation] = 0;
+          p.iter_id = genCounters[p.generation]++;
+        });
+        
+        dispatch({ type: 'SET_PROGRAMS', payload: programs });
+        dispatch({ type: 'SET_LOADING', payload: false });
+        
+        console.log('✅ Database auto-loaded successfully');
+      } catch (error) {
+        console.error('❌ Failed to auto-load database:', error);
+        if (mounted) {
+          dispatch({
+            type: 'SET_ERROR',
+            payload: error instanceof Error ? error.message : 'Failed to load database',
+          });
+          dispatch({ type: 'SET_LOADING', payload: false });
+        }
+      }
+    };
+    
+    autoLoad();
+    
+    return () => {
+      mounted = false;
+    };
+  }, []); // Run only once on mount
 
   return (
     <GenesisContext.Provider

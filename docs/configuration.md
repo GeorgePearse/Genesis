@@ -49,6 +49,10 @@ evo_config:
   task_sys_msg: "???"             # System message for LLM
   job_type: "local"                # Job execution type
   results_dir: ${output_dir}       # Results directory
+  
+  # Web Search Configuration
+  web_search_enabled: false        # Enable web search for agents
+  web_search_prob: 0.1             # Probability (0-1) of using search per attempt
 ```
 
 ### 2. Database Config (`db_config`)
@@ -145,6 +149,8 @@ exp_name: "genesis_my_task"
 | `patch_type_probs` | list | `[0.5, 0.5]` | Probabilities for patch types |
 | `language` | str | `"python"` | Programming language |
 | `embedding_model` | str | `"text-embedding-3-small"` | Model for code embeddings |
+| `web_search_enabled` | bool | `false` | Enable agents to search the web |
+| `web_search_prob` | float | `0.1` | Probability of using web search per attempt |
 
 ### Database Parameters
 
@@ -336,6 +342,19 @@ evo_config:
     strategy: "performance_based"
     window_size: 10
 ```
+
+### Web Search Integration
+
+Enable agents to search the web for documentation, libraries, and coding patterns. This is particularly useful for tasks involving niche libraries or new APIs.
+
+```yaml
+evo_config:
+  web_search_enabled: true
+  web_search_prob: 0.1     # 10% chance per patch attempt
+```
+
+- **`web_search_enabled`**: When set to `true`, agents are equipped with a search tool.
+- **`web_search_prob`**: Controls how frequently the search tool is made available to the agent. A lower probability (e.g., `0.1`) encourages the agent to rely mostly on its internal knowledge but allows for occasional external lookups when stuck.
 
 ## Configuration Examples
 

@@ -35,10 +35,13 @@ def query_openai(
     msg_history,
     output_model,
     model_posteriors=None,
+    tools=None,
     **kwargs,
 ) -> QueryResult:
     """Query OpenAI model."""
-    new_msg_history = msg_history + [{"role": "user", "content": msg}]
+    new_msg_history = list(msg_history)
+    if msg:
+        new_msg_history.append({"role": "user", "content": msg})
 
     # Build messages list for chat completions API
     messages = [{"role": "system", "content": system_msg}] + new_msg_history
@@ -52,6 +55,12 @@ def query_openai(
             chat_kwargs["max_tokens"] = v
         else:
             chat_kwargs[k] = v
+
+    if tools:
+        chat_kwargs["tools"] = tools
+
+    tool_calls = []
+    thought = ""
 
     if output_model is None:
         # Try the new responses API first, fall back to chat completions
@@ -75,10 +84,31 @@ def query_openai(
                 messages=messages,
                 **chat_kwargs,
             )
-            content = response.choices[0].message.content
+            message = response.choices[0].message
+            content = message.content or ""
+            if message.tool_calls:
+                for tc in message.tool_calls:
+                    tool_calls.append(
+                        {
+                            "id": tc.id,
+                            "type": tc.type,
+                            "function": {
+                                "name": tc.function.name,
+                                "arguments": tc.function.arguments,
+                            },
+                        }
+                    )
+
             input_tokens = response.usage.prompt_tokens
             output_tokens = response.usage.completion_tokens
-        new_msg_history.append({"role": "assistant", "content": content})
+
+        assistant_msg = {"role": "assistant"}
+        if content:
+            assistant_msg["content"] = content
+        if tool_calls:
+            assistant_msg["tool_calls"] = response.choices[0].message.tool_calls
+
+        new_msg_history.append(assistant_msg)
     else:
         # For structured output, use chat completions with response_format
         try:
@@ -137,7 +167,8 @@ def query_openai(
         cost=input_cost + output_cost,
         input_cost=input_cost,
         output_cost=output_cost,
-        thought="",
+        thought=thought,
+        tool_calls=tool_calls,
         model_posteriors=model_posteriors,
     )
     return result

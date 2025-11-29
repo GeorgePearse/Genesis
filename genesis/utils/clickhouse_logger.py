@@ -86,6 +86,7 @@ class ClickHouseLogger:
                     model String,
                     messages String, -- JSON string of messages
                     response String,
+                    thought String, -- Thinking process content
                     cost Float64,
                     execution_time Float64,
                     metadata String -- JSON string for extra info
@@ -202,6 +203,7 @@ class ClickHouseLogger:
         cost: float = 0.0,
         execution_time: float = 0.0,
         metadata: Optional[Dict[str, Any]] = None,
+        thought: str = "",
     ):
         if not self.enabled:
             return
@@ -223,6 +225,7 @@ class ClickHouseLogger:
                         model,
                         messages_str,
                         response,
+                        thought,
                         cost,
                         execution_time,
                         metadata_str,
@@ -234,6 +237,7 @@ class ClickHouseLogger:
                     "model",
                     "messages",
                     "response",
+                    "thought",
                     "cost",
                     "execution_time",
                     "metadata",
