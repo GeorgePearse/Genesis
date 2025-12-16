@@ -316,6 +316,7 @@ For detailed WebUI documentation, see the [WebUI Guide](docs/webui.md).
 - [OpenEvolve](https://github.com/codelion/openevolve): An open-source implementation of AlphaEvolve
 - [LLM4AD](https://github.com/Optima-CityU/llm4ad): A Platform for Algorithm Design with Large Language Model
 - [Scale AgentEx](https://github.com/scaleapi/scale-agentex): Automated experimentation and optimization for AI agents
+- https://github.com/olivkoch/nano-trm tiny reasoning models
 
 ## Acknowledgments 🙏
 
