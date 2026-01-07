@@ -325,6 +325,39 @@ An open-source framework for advanced reasoning with LLMs, combining process sup
 
 ---
 
+### SAGA: Self-Adapting Goal-Evolving Agents (2024)
+
+**Paper**: [SAGA: Autonomous Goal-Evolving Agents for Scientific Discovery](https://arxiv.org/html/2512.21782v1)
+
+An autonomous system that evolves both solutions AND objectives through bi-level optimization:
+
+- **Bi-Level Optimization**:
+  - Inner loop: Optimize solutions for current objectives (similar to Genesis)
+  - Outer loop: Evolve objectives themselves based on results and failure analysis
+- **Four Agentic Modules**: Planner (goal decomposition), Implementer (code generation), Optimizer (solution search), Analyzer (reward hacking detection)
+- **Three Autonomy Levels**: Co-pilot (human-guided), semi-pilot (human review), autopilot (fully autonomous)
+- **Multi-Objective Balancing**: Dynamically reweights competing objectives to prevent reward hacking
+
+**Key Results**:
+
+- **Antibiotic Design**: Generated drug-like K. pneumoniae inhibitors balancing efficacy and synthesizability
+- **Materials Science**: Designed permanent magnets and superhard materials validated by DFT calculations
+- **DNA Design**: ~50% improvement over baselines for cell-type-specific enhancers
+- **Chemical Engineering**: Automated discovery of practical constraints in process flowsheet design
+
+**Relevance to Genesis**:
+
+Genesis excels at the "inner loop" (evolving code for fixed objectives). SAGA's "outer loop" (objective evolution) addresses Genesis's limitation of static `evaluate.py` functions. Key opportunities:
+
+1. **Dynamic Fitness Functions**: Detect reward hacking and evolve objectives automatically
+2. **Modular Architecture**: SAGA's four-module design (Planner/Implementer/Optimizer/Analyzer) provides clean abstraction that could improve Genesis's structure
+3. **Multi-Objective Optimization**: Track Pareto frontier instead of single `combined_score`
+4. **Human-in-the-Loop**: Add intervention points for reviewing objective changes
+
+See [`docs/saga_integration.md`](saga_integration.md) for detailed integration design and [`docs/modular_architecture.md`](modular_architecture.md) for proposed refactoring.
+
+---
+
 ## Surveys and Reviews
 
 ### Evolutionary Computation in the Era of Large Language Models
