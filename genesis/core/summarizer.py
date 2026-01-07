@@ -18,7 +18,21 @@ logger = logging.getLogger(__name__)
 
 
 class MetaSummarizer:
-    """Handles meta-level summarization and recommendation generation."""
+    """Handles meta-level summarization and recommendation generation.
+
+    SAGA MODULE MAPPING:
+    - Maps to SAGA "Analyzer" (analyzes population performance)
+    - Partially maps to "Planner" (provides strategic recommendations)
+
+    Current focus: Solution-level recommendations (try different algorithms)
+    SAGA extension: Objective-level recommendations (modify fitness function)
+
+    Example SAGA-style output:
+    "High scores achieved via edge cases. Recommend adding robustness
+    penalty to combined_score formula."
+
+    See docs/saga_integration.md section on objective evolution.
+    """
 
     def __init__(
         self,
