@@ -38,6 +38,18 @@ FOLDER_PREFIX = "gen"
 
 @dataclass
 class EvolutionConfig:
+    """Configuration for evolution loop.
+
+    ARCHITECTURAL NOTE (SAGA Paper):
+    Genesis currently implements SAGA's "inner loop" (solution optimization).
+    Future extensions could add SAGA's "outer loop" (objective evolution):
+
+    - Objective evolution: LLM modifies evaluate.py based on reward hacking
+    - Bi-level optimization: Separate solution-level and objective-level
+    - Multi-objective: Pareto frontier instead of single combined_score
+
+    See docs/saga_integration.md for design details.
+    """
     task_sys_msg: Optional[str] = None
     patch_types: List[str] = field(default_factory=lambda: ["diff"])
     patch_type_probs: List[float] = field(default_factory=lambda: [1.0])
@@ -99,6 +111,21 @@ logger = logging.getLogger(__name__)
 
 
 class EvolutionRunner:
+    """Main evolution loop - maps to SAGA Optimizer module.
+
+    MODULAR ARCHITECTURE NOTE (SAGA Paper Comparison):
+    This class implicitly combines all four SAGA modules:
+    - Planner: meta_recommendations (strategic guidance)
+    - Implementer: patch sampling and application
+    - Optimizer: parent selection, islands, evolution loop
+    - Analyzer: evaluation result processing
+
+    Future refactoring could extract these into separate modules with
+    clean interfaces for better extensibility and testability.
+
+    See docs/modular_architecture.md for refactoring plan.
+    """
+
     def __init__(
         self,
         evo_config: EvolutionConfig,

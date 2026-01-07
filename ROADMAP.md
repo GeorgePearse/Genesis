@@ -104,7 +104,7 @@ See `examples/mask_to_seg_rust/` for a complete Rust example.
   - Discriminative models: Score quality of each code modification step
   - Generative models: Predict likelihood of successful evolution path
   - Dataset: Collect step-by-step evolution traces with fitness improvements
-  
+
 - [ ] **Self-Improving Task Prompts (DSPy Integration)**
   - **MIPRO-style Instruction Optimization**: Implement an "outer loop" that treats the `task_sys_msg` as a variable.
     - Run short evolution "micro-sprints" (e.g., 5 generations).
@@ -113,6 +113,72 @@ See `examples/mask_to_seg_rust/` for a complete Rust example.
   - **Bootstrap Few-Shot Selection**: Instead of just random "Top-K" inspirations, use an optimizer to select the *most effective* historical mutations to show as few-shot examples.
     - Learn which types of examples (e.g., "small refactor" vs "algorithm swap") lead to better LLM outputs for the specific task.
   - **Signature-based Prompts**: Abstract prompts into Input/Output signatures (e.g., `Code -> ImprovedCode`), allowing the system to automatically format and structure the prompt implementation.
+
+#### SAGA Framework Integration
+
+Integrate concepts from [SAGA (Self-Adapting Goal-Evolving Agents)](https://arxiv.org/html/2512.21782v1) to enable bi-level optimization: evolving both solutions (current) and objectives (new). See [`docs/saga_integration.md`](docs/saga_integration.md) for detailed design.
+
+**Objective Evolution** (High Priority)
+- [ ] Implement dynamic fitness function evolution
+  - Create `genesis/core/objective_evolution.py` module
+  - Extend `EvolutionConfig` with objective evolution parameters
+  - Modify `wrap_eval.py` to support multi-metric returns without `combined_score`
+  - Add prompts for LLM-driven objective analysis
+- [ ] Detect reward hacking via population analysis
+  - LLM analyzes top programs for suspicious metric patterns
+  - Identifies exploitation vs genuine optimization
+  - Proposes objective reweighting to address issues
+- [ ] LLM-driven metric reweighting
+  - Dynamic computation of `combined_score` from raw metrics
+  - Objective weights evolve based on reward hacking detection
+  - Track objective version history in database
+- [ ] Multi-objective Pareto frontier tracking
+  - Extend archive to store Pareto-optimal programs
+  - Sample parents across Pareto frontier for diversity
+  - WebUI visualization of objective trade-offs
+- [ ] Example: Circle packing with competing objectives
+  - Prototype in `examples/saga_objective_evolution/`
+  - Demonstrate: sum_radii vs variance vs uniformity vs symmetry
+  - Show objective evolution preventing reward hacking
+
+**Modular Architecture** (Medium Priority)
+
+Extract clean four-module design (Planner, Implementer, Optimizer, Analyzer) from current monolithic `EvolutionRunner`. See [`docs/modular_architecture.md`](docs/modular_architecture.md) for refactoring plan.
+
+- [ ] Extract clean interfaces for four SAGA modules
+  - Define `PlannerInterface`, `ImplementerInterface`, `OptimizerInterface`, `AnalyzerInterface`
+  - Create `genesis/core/interfaces.py` with abstract base classes
+  - Document interface contracts and expected behaviors
+- [ ] Refactor EvolutionRunner into slim orchestrator
+  - Reduce from 1756 lines to ~200 lines
+  - Delegate to module interfaces instead of inline logic
+  - Maintain backward compatibility via factory functions
+- [ ] Plugin architecture for custom module implementations
+  - Hydra config groups for each module type
+  - Enable swapping modules via configuration
+  - Example: `optimizer: bayesian` vs `optimizer: island_evolution`
+- [ ] Dependency injection for extensibility
+  - Module instances passed to EvolutionRunner constructor
+  - Support alternative implementations (Bayesian, MCTS, etc.)
+  - Test module isolation and composition
+
+**Human-in-the-Loop** (Medium Priority)
+- [ ] Three-tier autonomy system (co-pilot/semi-pilot/autopilot)
+  - **Co-pilot**: Human reviews and approves each objective change
+  - **Semi-pilot**: Human reviews analyzer insights before auto-evolution
+  - **Autopilot**: Fully autonomous (current behavior, default)
+- [ ] Interactive approval gates at meta_rec_interval
+  - Pause evolution when objective changes proposed
+  - Display rationale and population analysis
+  - Allow approve/reject/modify via WebUI or CLI
+- [ ] User feedback incorporation into mutations
+  - Capture human insights during reviews
+  - Feed feedback into next generation's prompts
+  - Learn from human preferences over time
+- [ ] WebUI integration for human review
+  - "Review & Approve" panel showing proposed changes
+  - Visualize population state and objective quality
+  - Interactive objective weight adjustment
 
 - [ ] **Advanced Search Strategies**
   - [ ] MCTS for Code Evolution: Tree search over mutation space
