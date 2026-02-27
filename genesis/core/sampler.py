@@ -68,6 +68,7 @@ class PromptSampler:
         archive_inspirations: List[Program],
         top_k_inspirations: List[Program],
         meta_recommendations: Optional[str] = None,
+        alma_memory_context: Optional[str] = None,
     ) -> Tuple[str, str, str]:
         if self.task_sys_msg is None:
             sys_msg = BASE_SYSTEM_MSG
@@ -119,6 +120,9 @@ class PromptSampler:
                 language=self.language,
                 include_text_feedback=self.use_text_feedback,
             )
+
+        if alma_memory_context not in [None, "none", ""]:
+            eval_history_msg += "\n\n" + str(alma_memory_context).strip()
 
         # Format text feedback section for current program
         text_feedback_section = ""

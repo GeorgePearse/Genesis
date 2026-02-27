@@ -30,6 +30,7 @@ from genesis.edit import (
 from genesis.core.sampler import PromptSampler
 from genesis.core.summarizer import MetaSummarizer
 from genesis.core.novelty_judge import NoveltyJudge
+from genesis.core.alma_memory import ALMAMemorySystem
 from genesis.logo import print_gradient_logo
 from genesis.tools.web_search import search_web
 
@@ -75,6 +76,11 @@ class EvolutionConfig:
     novelty_llm_models: Optional[List[str]] = None
     novelty_llm_kwargs: dict = field(default_factory=lambda: {})
     use_text_feedback: bool = False
+    # ALMA-style long-term memory
+    alma_enabled: bool = False
+    alma_max_entries: int = 256
+    alma_max_retrievals: int = 4
+    alma_min_success_delta: float = 0.0
 
     # Web search
     web_search_enabled: bool = False
@@ -256,6 +262,13 @@ class EvolutionRunner:
             max_novelty_attempts=evo_config.max_novelty_attempts,
         )
 
+        self.alma_memory = ALMAMemorySystem(
+            enabled=evo_config.alma_enabled,
+            max_entries=evo_config.alma_max_entries,
+            max_retrievals=evo_config.alma_max_retrievals,
+            min_success_delta=evo_config.alma_min_success_delta,
+        )
+
         # Initialize rich console for formatted output
         self.console = Console()
 
@@ -328,6 +341,7 @@ class EvolutionRunner:
 
         # Save experiment configuration to a YAML file
         self._save_experiment_config(evo_config, job_config, db_config)
+        self._restore_alma_memory()
 
     def _save_experiment_config(
         self,
@@ -462,6 +476,7 @@ class EvolutionRunner:
 
         # Save final meta memory state
         self._save_meta_memory()
+        self._save_alma_memory()
 
         self.db.print_summary()
         logger.info(f"Evolution completed! {self.completed_generations} generations")
@@ -637,6 +652,8 @@ class EvolutionRunner:
         public_metrics = metrics_val.get("public", {})
         private_metrics = metrics_val.get("private", {})
         text_feedback = metrics_val.get("text_feedback", "")
+        parent_program = self.db.get(job.parent_id) if job.parent_id else None
+        parent_score = parent_program.combined_score if parent_program else 0.0
 
         # Add the program to the database
         db_program = Program(
@@ -706,6 +723,28 @@ class EvolutionRunner:
 
         # Add the evaluated program to meta memory tracking
         self.meta_summarizer.add_evaluated_program(db_program)
+        self.alma_memory.observe_outcome(
+            generation=job.generation,
+            parent_score=parent_score,
+            child_score=combined_score,
+            correct=correct_val,
+            patch_type=job.meta_patch_data.get("patch_type", "")
+            if job.meta_patch_data
+            else "",
+            patch_name=job.meta_patch_data.get("patch_name", "")
+            if job.meta_patch_data
+            else "",
+            patch_description=job.meta_patch_data.get("patch_description", "")
+            if job.meta_patch_data
+            else "",
+            diff_summary=job.meta_patch_data.get("diff_summary", {})
+            if job.meta_patch_data
+            else {},
+            text_feedback=text_feedback,
+            error_message=job.meta_patch_data.get("error_attempt")
+            if job.meta_patch_data
+            else "",
+        )
 
         # Check if we should update meta memory after adding this program
         if self.meta_summarizer.should_update_meta(self.evo_config.meta_rec_interval):
@@ -1140,8 +1179,6 @@ class EvolutionRunner:
             code_hash = hashlib.sha256(evaluated_code.encode()).hexdigest()[:16]
 
             # Get parent program for fitness delta
-            parent_program = self.db.get(job.parent_id) if job.parent_id else None
-            parent_score = parent_program.combined_score if parent_program else 0.0
             fitness_delta = combined_score - parent_score
 
             # Determine mutation type from metadata
@@ -1285,6 +1322,7 @@ class EvolutionRunner:
 
         # Save meta memory state after each job completion
         self._save_meta_memory()
+        self._save_alma_memory()
 
     def _update_best_solution(self):
         """Checks and updates the best program."""
@@ -1341,12 +1379,20 @@ class EvolutionRunner:
             )
         # Get current meta recommendations
         meta_recs, _, _ = self.meta_summarizer.get_current()
+        alma_context = self.alma_memory.build_prompt_context(
+            current_generation=generation,
+            parent_code=parent_program.code,
+            parent_feedback=parent_program.text_feedback
+            if isinstance(parent_program.text_feedback, str)
+            else "",
+        )
         # Construct edit / code change message
         patch_sys, patch_msg, patch_type = self.prompt_sampler.sample(
             parent=parent_program,
             archive_inspirations=archive_programs,
             top_k_inspirations=top_k_programs,
             meta_recommendations=meta_recs,
+            alma_memory_context=alma_context,
         )
 
         if patch_type in ["full", "cross"]:
@@ -1764,6 +1810,13 @@ class EvolutionRunner:
         meta_memory_path = Path(self.results_dir) / "meta_memory.json"
         self.meta_summarizer.save_meta_state(str(meta_memory_path))
 
+    def _save_alma_memory(self) -> None:
+        """Save ALMA memory state to disk."""
+        if not self.evo_config.alma_enabled:
+            return
+        alma_memory_path = Path(self.results_dir) / "alma_memory.json"
+        self.alma_memory.save_state(str(alma_memory_path))
+
     def _restore_meta_memory(self) -> None:
         """Restore the meta memory state from disk."""
         meta_memory_path = Path(self.results_dir) / "meta_memory.json"
@@ -1781,3 +1834,12 @@ class EvolutionRunner:
                 )
             else:
                 logger.info("No previous meta memory state found - starting fresh")
+
+    def _restore_alma_memory(self) -> None:
+        """Restore ALMA memory state from disk."""
+        if not self.evo_config.alma_enabled:
+            return
+        alma_memory_path = Path(self.results_dir) / "alma_memory.json"
+        success = self.alma_memory.load_state(str(alma_memory_path))
+        if success:
+            logger.info(f"Restored ALMA memory from {alma_memory_path}")
