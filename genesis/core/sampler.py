@@ -68,6 +68,7 @@ class PromptSampler:
         archive_inspirations: List[Program],
         top_k_inspirations: List[Program],
         meta_recommendations: Optional[str] = None,
+        alma_memory_context: Optional[str] = None,
         gepa_instruction: Optional[str] = None,
         gepa_fewshot_examples: Optional[str] = None,
     ) -> Tuple[str, str, str]:
@@ -125,6 +126,9 @@ class PromptSampler:
                 language=self.language,
                 include_text_feedback=self.use_text_feedback,
             )
+
+        if alma_memory_context not in [None, "none", ""]:
+            eval_history_msg += "\n\n" + str(alma_memory_context).strip()
 
         if gepa_fewshot_examples not in [None, "none", ""]:
             eval_history_msg += "\n\n# GEPA Bootstrapped Mutation Traces\n"
