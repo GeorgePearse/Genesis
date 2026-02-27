@@ -31,6 +31,7 @@ from genesis.core.sampler import PromptSampler
 from genesis.core.summarizer import MetaSummarizer
 from genesis.core.novelty_judge import NoveltyJudge
 from genesis.core.alma_memory import ALMAMemorySystem
+from genesis.core.gepa_optimizer import GEPAStyleOptimizer
 from genesis.logo import print_gradient_logo
 from genesis.tools.web_search import search_web
 
@@ -81,6 +82,13 @@ class EvolutionConfig:
     alma_max_entries: int = 256
     alma_max_retrievals: int = 4
     alma_min_success_delta: float = 0.0
+    # GEPA-style prompt optimization (DSPy-inspired)
+    gepa_enabled: bool = False
+    gepa_num_fewshot_traces: int = 3
+    gepa_max_traces: int = 64
+    gepa_min_improvement: float = 0.0
+    gepa_exploration_weight: float = 1.1
+    gepa_candidate_instructions: Optional[List[str]] = None
 
     # Web search
     web_search_enabled: bool = False
@@ -272,6 +280,15 @@ class EvolutionRunner:
         # Initialize rich console for formatted output
         self.console = Console()
 
+        self.gepa_optimizer = GEPAStyleOptimizer(
+            enabled=evo_config.gepa_enabled,
+            num_fewshot_traces=evo_config.gepa_num_fewshot_traces,
+            max_traces=evo_config.gepa_max_traces,
+            min_improvement=evo_config.gepa_min_improvement,
+            exploration_weight=evo_config.gepa_exploration_weight,
+            candidate_instructions=evo_config.gepa_candidate_instructions,
+        )
+
         if self.evo_config.language == "cuda":
             self.lang_ext = "cu"
         elif self.evo_config.language == "cpp":
@@ -342,6 +359,9 @@ class EvolutionRunner:
         # Save experiment configuration to a YAML file
         self._save_experiment_config(evo_config, job_config, db_config)
         self._restore_alma_memory()
+
+        # Try restoring GEPA state if this is a resumed run
+        self._restore_gepa_state()
 
     def _save_experiment_config(
         self,
@@ -477,6 +497,7 @@ class EvolutionRunner:
         # Save final meta memory state
         self._save_meta_memory()
         self._save_alma_memory()
+        self._save_gepa_state()
 
         self.db.print_summary()
         logger.info(f"Evolution completed! {self.completed_generations} generations")
@@ -652,8 +673,6 @@ class EvolutionRunner:
         public_metrics = metrics_val.get("public", {})
         private_metrics = metrics_val.get("private", {})
         text_feedback = metrics_val.get("text_feedback", "")
-        parent_program = self.db.get(job.parent_id) if job.parent_id else None
-        parent_score = parent_program.combined_score if parent_program else 0.0
 
         # Add the program to the database
         db_program = Program(
@@ -773,6 +792,7 @@ class EvolutionRunner:
 
         # Save meta memory state after each job completion
         self._save_meta_memory()
+        self._save_gepa_state()
 
     def _update_completed_generations(self):
         """
@@ -1138,6 +1158,8 @@ class EvolutionRunner:
         public_metrics = metrics_val.get("public", {})
         private_metrics = metrics_val.get("private", {})
         text_feedback = metrics_val.get("text_feedback", "")
+        parent_program = self.db.get(job.parent_id) if job.parent_id else None
+        parent_score = parent_program.combined_score if parent_program else 0.0
 
         # Add the program to the database
         db_program = Program(
@@ -1169,6 +1191,50 @@ class EvolutionRunner:
             },
         )
         self.db.add(db_program, verbose=True)
+
+        self.gepa_optimizer.observe_result(
+            generation=job.generation,
+            parent_score=parent_score,
+            child_score=combined_score,
+            patch_type=job.meta_patch_data.get("patch_type", "")
+            if job.meta_patch_data
+            else "",
+            patch_name=job.meta_patch_data.get("patch_name", "")
+            if job.meta_patch_data
+            else "",
+            patch_description=job.meta_patch_data.get("patch_description", "")
+            if job.meta_patch_data
+            else "",
+            diff_summary=job.meta_patch_data.get("diff_summary", {})
+            if job.meta_patch_data
+            else {},
+            candidate_id=job.meta_patch_data.get("gepa_candidate_id")
+            if job.meta_patch_data
+            else None,
+            correct=correct_val,
+        )
+        self.alma_memory.observe_outcome(
+            generation=job.generation,
+            parent_score=parent_score,
+            child_score=combined_score,
+            correct=correct_val,
+            patch_type=job.meta_patch_data.get("patch_type", "")
+            if job.meta_patch_data
+            else "",
+            patch_name=job.meta_patch_data.get("patch_name", "")
+            if job.meta_patch_data
+            else "",
+            patch_description=job.meta_patch_data.get("patch_description", "")
+            if job.meta_patch_data
+            else "",
+            diff_summary=job.meta_patch_data.get("diff_summary", {})
+            if job.meta_patch_data
+            else {},
+            text_feedback=text_feedback,
+            error_message=job.meta_patch_data.get("error_attempt")
+            if job.meta_patch_data
+            else "",
+        )
 
         # Log individual to ClickHouse
         try:
@@ -1323,6 +1389,7 @@ class EvolutionRunner:
         # Save meta memory state after each job completion
         self._save_meta_memory()
         self._save_alma_memory()
+        self._save_gepa_state()
 
     def _update_best_solution(self):
         """Checks and updates the best program."""
@@ -1386,6 +1453,7 @@ class EvolutionRunner:
             if isinstance(parent_program.text_feedback, str)
             else "",
         )
+        gepa_ctx = self.gepa_optimizer.build_prompt_context()
         # Construct edit / code change message
         patch_sys, patch_msg, patch_type = self.prompt_sampler.sample(
             parent=parent_program,
@@ -1393,6 +1461,8 @@ class EvolutionRunner:
             top_k_inspirations=top_k_programs,
             meta_recommendations=meta_recs,
             alma_memory_context=alma_context,
+            gepa_instruction=gepa_ctx["candidate_instruction"],
+            gepa_fewshot_examples=gepa_ctx["fewshot_examples"],
         )
 
         if patch_type in ["full", "cross"]:
@@ -1601,6 +1671,8 @@ class EvolutionRunner:
             "thought": response.thought
             if response and hasattr(response, "thought")
             else "",
+            "gepa_candidate_id": gepa_ctx["candidate_id"],
+            "gepa_candidate_instruction": gepa_ctx["candidate_instruction"],
         }
         if self.verbose and num_applied_attempt > 0:
             self._print_metadata_table(meta_edit_data, generation)
@@ -1817,6 +1889,13 @@ class EvolutionRunner:
         alma_memory_path = Path(self.results_dir) / "alma_memory.json"
         self.alma_memory.save_state(str(alma_memory_path))
 
+    def _save_gepa_state(self) -> None:
+        """Save GEPA optimizer state to disk."""
+        if not self.evo_config.gepa_enabled:
+            return
+        gepa_state_path = Path(self.results_dir) / "gepa_state.json"
+        self.gepa_optimizer.save_state(str(gepa_state_path))
+
     def _restore_meta_memory(self) -> None:
         """Restore the meta memory state from disk."""
         meta_memory_path = Path(self.results_dir) / "meta_memory.json"
@@ -1843,3 +1922,12 @@ class EvolutionRunner:
         success = self.alma_memory.load_state(str(alma_memory_path))
         if success:
             logger.info(f"Restored ALMA memory from {alma_memory_path}")
+
+    def _restore_gepa_state(self) -> None:
+        """Restore GEPA optimizer state from disk."""
+        if not self.evo_config.gepa_enabled:
+            return
+        gepa_state_path = Path(self.results_dir) / "gepa_state.json"
+        success = self.gepa_optimizer.load_state(str(gepa_state_path))
+        if success:
+            logger.info(f"Restored GEPA state from {gepa_state_path}")

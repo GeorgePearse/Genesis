@@ -69,11 +69,17 @@ class PromptSampler:
         top_k_inspirations: List[Program],
         meta_recommendations: Optional[str] = None,
         alma_memory_context: Optional[str] = None,
+        gepa_instruction: Optional[str] = None,
+        gepa_fewshot_examples: Optional[str] = None,
     ) -> Tuple[str, str, str]:
         if self.task_sys_msg is None:
             sys_msg = BASE_SYSTEM_MSG
         else:
             sys_msg = self.task_sys_msg
+
+        if gepa_instruction not in [None, "none", ""]:
+            sys_msg += "\n\n# GEPA Optimization Guidance\n"
+            sys_msg += str(gepa_instruction).strip()
 
         # Sample coding type
         # Filter out crossover if no inspirations
@@ -123,6 +129,10 @@ class PromptSampler:
 
         if alma_memory_context not in [None, "none", ""]:
             eval_history_msg += "\n\n" + str(alma_memory_context).strip()
+
+        if gepa_fewshot_examples not in [None, "none", ""]:
+            eval_history_msg += "\n\n# GEPA Bootstrapped Mutation Traces\n"
+            eval_history_msg += str(gepa_fewshot_examples).strip()
 
         # Format text feedback section for current program
         text_feedback_section = ""
