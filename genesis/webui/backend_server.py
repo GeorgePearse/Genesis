@@ -48,6 +48,20 @@ app.add_middleware(
 
 # ClickHouse client (will be initialized on startup)
 ch_client = None
+RUN_ID_RE = re.compile(r"^[A-Za-z0-9._:-]+$")
+PROGRAM_ID_RE = re.compile(r"^[A-Za-z0-9-]+$")
+TASK_RE = re.compile(r"^[A-Za-z0-9_.:-]+$")
+DB_PATH_RE = re.compile(r"^[A-Za-z0-9_./:-]+$")
+
+
+def _escape_sql_literal(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("'", "''")
+
+
+def _validate_or_400(value: str, pattern: re.Pattern[str], field_name: str) -> str:
+    if not pattern.fullmatch(value):
+        raise HTTPException(status_code=400, detail=f"Invalid {field_name}")
+    return value
 
 
 def parse_clickhouse_url(url: str) -> Dict[str, Any]:
@@ -132,8 +146,10 @@ async def list_experiments(
         # Build query
         where_clause = ""
         if task:
+            task = _validate_or_400(task, TASK_RE, "task")
+            escaped_task = _escape_sql_literal(task)
             where_clause = (
-                f"WHERE JSONExtractString(metadata, 'original_run_id') LIKE '%{task}%'"
+                f"WHERE JSONExtractString(metadata, 'original_run_id') LIKE '%{escaped_task}%'"
             )
 
         query = f"""
@@ -193,9 +209,13 @@ async def get_programs(
     Get all programs for a specific experiment run.
     """
     try:
+        run_id = _validate_or_400(run_id, RUN_ID_RE, "run_id")
         client = get_clickhouse_client()
+        escaped_run_id = _escape_sql_literal(run_id)
 
-        where_clauses = [f"JSONExtractString(metadata, 'original_run_id') = '{run_id}'"]
+        where_clauses = [
+            f"JSONExtractString(metadata, 'original_run_id') = '{escaped_run_id}'"
+        ]
         if generation is not None:
             where_clauses.append(f"generation = {generation}")
 
@@ -270,7 +290,11 @@ async def get_program_detail(run_id: str, program_id: str):
     Get detailed information for a specific program including code.
     """
     try:
+        run_id = _validate_or_400(run_id, RUN_ID_RE, "run_id")
+        program_id = _validate_or_400(program_id, PROGRAM_ID_RE, "program_id")
         client = get_clickhouse_client()
+        escaped_run_id = _escape_sql_literal(run_id)
+        escaped_program_id = _escape_sql_literal(program_id)
 
         query = f"""
         SELECT 
@@ -296,8 +320,8 @@ async def get_program_detail(run_id: str, program_id: str):
             migration_history,
             in_archive
         FROM programs
-        WHERE id = '{program_id}' 
-        AND JSONExtractString(metadata, 'original_run_id') = '{run_id}'
+        WHERE id = '{escaped_program_id}' 
+        AND JSONExtractString(metadata, 'original_run_id') = '{escaped_run_id}'
         LIMIT 1
         """
 
@@ -354,7 +378,9 @@ async def get_experiment_stats(run_id: str):
     Get statistical summary for an experiment.
     """
     try:
+        run_id = _validate_or_400(run_id, RUN_ID_RE, "run_id")
         client = get_clickhouse_client()
+        escaped_run_id = _escape_sql_literal(run_id)
 
         query = f"""
         SELECT 
@@ -367,7 +393,7 @@ async def get_experiment_stats(run_id: str):
             max(generation) as max_generation,
             sum(CASE WHEN in_archive = 1 THEN 1 ELSE 0 END) as archive_count
         FROM programs
-        WHERE JSONExtractString(metadata, 'original_run_id') = '{run_id}'
+        WHERE JSONExtractString(metadata, 'original_run_id') = '{escaped_run_id}'
         """
 
         result = client.query(query)
@@ -396,7 +422,7 @@ async def get_experiment_stats(run_id: str):
             max(combined_score) as best,
             avg(combined_score) as avg
         FROM programs
-        WHERE JSONExtractString(metadata, 'original_run_id') = '{run_id}'
+        WHERE JSONExtractString(metadata, 'original_run_id') = '{escaped_run_id}'
         GROUP BY generation
         ORDER BY generation
         """
@@ -431,7 +457,9 @@ async def get_lineage(run_id: str):
     Get parent-child lineage graph for visualization.
     """
     try:
+        run_id = _validate_or_400(run_id, RUN_ID_RE, "run_id")
         client = get_clickhouse_client()
+        escaped_run_id = _escape_sql_literal(run_id)
 
         query = f"""
         SELECT 
@@ -441,7 +469,7 @@ async def get_lineage(run_id: str):
             combined_score,
             island_idx
         FROM programs
-        WHERE JSONExtractString(metadata, 'original_run_id') = '{run_id}'
+        WHERE JSONExtractString(metadata, 'original_run_id') = '{escaped_run_id}'
         AND parent_id != ''
         ORDER BY generation, timestamp
         """
@@ -537,12 +565,14 @@ async def get_programs_legacy(db_path: str = Query(..., alias="db_path")):
     Get all programs for a specific run from ClickHouse.
     """
     try:
+        db_path = _validate_or_400(db_path, DB_PATH_RE, "db_path")
         client = get_clickhouse_client()
 
         # Handle frontend path normalization
         search_path = db_path
         if search_path.endswith("/clickhouse_dummy"):
             search_path = search_path.replace("/clickhouse_dummy", "")
+        escaped_search_path = _escape_sql_literal(search_path)
 
         query = f"""
         SELECT 
@@ -569,8 +599,8 @@ async def get_programs_legacy(db_path: str = Query(..., alias="db_path")):
             embedding_pca_3d,
             embedding
         FROM programs
-        WHERE (JSONExtractString(metadata, 'original_run_id') = '{search_path}'
-           OR JSONExtractString(metadata, 'migration_source') = '{search_path}')
+        WHERE (JSONExtractString(metadata, 'original_run_id') = '{escaped_search_path}'
+           OR JSONExtractString(metadata, 'migration_source') = '{escaped_search_path}')
         ORDER BY generation, timestamp
         """
 

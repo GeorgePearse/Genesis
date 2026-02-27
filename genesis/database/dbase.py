@@ -707,9 +707,211 @@ class ProgramDatabase:
     def _print_program_summary(self, program):
         pass
 
-    # ... Other methods (sample, compute_similarity) would need similar updates
-    # Creating a stub for sample to prevent immediate crash if used
-    def sample(self, *args, **kwargs):
-        # minimal stub
+    def _program_exists(self) -> bool:
+        try:
+            return self._count_programs() > 0
+        except Exception:
+            return False
+
+    def _get_island_idx_for_program_id(self, program_id: str) -> Optional[int]:
+        program = self.get(program_id)
+        return program.island_idx if program is not None else None
+
+    def _fallback_parent(self) -> Optional[Program]:
+        """
+        Return a robust fallback parent if strategy-based selection fails.
+
+        Preference order:
+        1. Current best (correct program)
+        2. Highest-scoring program overall
+        3. Most recent program
+        """
         parent = self.get_best_program()
-        return parent, [], []
+        if parent is not None:
+            return parent
+
+        res = self.client.query(
+            """
+            SELECT * FROM programs
+            ORDER BY combined_score DESC, timestamp DESC
+            LIMIT 1
+            """
+        )
+        if res.result_rows:
+            return self._program_from_dict(dict(zip(res.column_names, res.result_rows[0])))
+        return None
+
+    def sample(
+        self,
+        target_generation: Optional[int] = None,
+        novelty_attempt: int = 1,
+        max_novelty_attempts: int = 1,
+        resample_attempt: int = 1,
+        max_resample_attempts: int = 1,
+    ) -> Tuple[Program, List[Program], List[Program]]:
+        """
+        Sample a parent and inspiration context for the next generation.
+        """
+        if not self._program_exists():
+            raise ValueError("Cannot sample parent/context: database has no programs.")
+
+        island_idx = None
+        if (
+            getattr(self.config, "enforce_island_separation", False)
+            and getattr(self.config, "num_islands", 0) > 1
+            and self.island_manager is not None
+            and hasattr(self.island_manager.assignment_strategy, "get_initialized_islands")
+        ):
+            try:
+                initialized_islands = (
+                    self.island_manager.assignment_strategy.get_initialized_islands()
+                )
+                if initialized_islands:
+                    island_idx = random.choice(initialized_islands)
+            except Exception:
+                island_idx = None
+
+        parent_selector = CombinedParentSelector(
+            client=self.client,
+            config=self.config,
+            get_program_func=self.get,
+            best_program_id=self.best_program_id,
+            beam_search_parent_id=self.beam_search_parent_id,
+            last_iteration=self.last_iteration,
+            update_metadata_func=self._update_metadata,
+            get_best_program_func=self.get_best_program,
+        )
+        try:
+            parent = parent_selector.sample_parent(island_idx=island_idx)
+        except Exception:
+            parent = None
+
+        if parent is None:
+            parent = self._fallback_parent()
+        if parent is None:
+            raise ValueError("Unable to sample a parent program from database.")
+
+        context_selector = CombinedContextSelector(
+            client=self.client,
+            config=self.config,
+            get_program_func=self.get,
+            best_program_id=self.best_program_id,
+            get_island_idx_func=self._get_island_idx_for_program_id,
+        )
+
+        num_archive = max(0, int(getattr(self.config, "num_archive_inspirations", 0)))
+        num_top_k = max(0, int(getattr(self.config, "num_top_k_inspirations", 0)))
+
+        try:
+            archive_inspirations, top_k_inspirations = context_selector.sample_context(
+                parent=parent,
+                num_archive=num_archive,
+                num_topk=num_top_k,
+            )
+        except Exception as e:
+            logger.warning(f"Context sampling failed; continuing without inspirations: {e}")
+            archive_inspirations, top_k_inspirations = [], []
+
+        archive_inspirations = [p for p in archive_inspirations if p and p.id != parent.id]
+        top_k_inspirations = [
+            p for p in top_k_inspirations if p and p.id != parent.id
+        ]
+
+        # Deduplicate while preserving order
+        seen: set[str] = set()
+        dedup_archive = []
+        for p in archive_inspirations:
+            if p.id not in seen:
+                seen.add(p.id)
+                dedup_archive.append(p)
+
+        seen_topk: set[str] = set()
+        dedup_topk = []
+        for p in top_k_inspirations:
+            if p.id not in seen_topk and p.id not in seen:
+                seen_topk.add(p.id)
+                dedup_topk.append(p)
+
+        return parent, dedup_archive, dedup_topk
+
+    def _fetch_embedding_rows(
+        self, island_idx: Optional[int] = None
+    ) -> List[Tuple[str, List[float]]]:
+        where = "WHERE length(embedding) > 0 AND correct = 1"
+        if island_idx is not None:
+            where += f" AND island_idx = {int(island_idx)}"
+
+        res = self.client.query(f"SELECT id, embedding FROM programs {where}")
+        rows: List[Tuple[str, List[float]]] = []
+        for program_id, embedding in res.result_rows:
+            if not embedding:
+                continue
+            rows.append((program_id, list(embedding)))
+        return rows
+
+    def compute_similarity(
+        self, code_embedding: List[float], island_idx: Optional[int] = None
+    ) -> List[float]:
+        """
+        Compute cosine similarities between a candidate embedding and existing
+        programs (optionally limited to an island).
+        """
+        if not code_embedding:
+            return []
+
+        rows = self._fetch_embedding_rows(island_idx=island_idx)
+        if not rows:
+            return []
+
+        query_vec = np.asarray(code_embedding, dtype=np.float32)
+        q_norm = np.linalg.norm(query_vec)
+        if q_norm == 0:
+            return []
+
+        similarities: List[float] = []
+        for _, emb in rows:
+            emb_vec = np.asarray(emb, dtype=np.float32)
+            if emb_vec.size != query_vec.size:
+                continue
+            emb_norm = np.linalg.norm(emb_vec)
+            if emb_norm == 0:
+                continue
+            sim = float(np.dot(query_vec, emb_vec) / (q_norm * emb_norm))
+            if math.isfinite(sim):
+                similarities.append(sim)
+        return similarities
+
+    def get_most_similar_program(
+        self, code_embedding: List[float], island_idx: Optional[int] = None
+    ) -> Optional[Program]:
+        """
+        Return the most similar existing program by cosine similarity.
+        """
+        if not code_embedding:
+            return None
+
+        rows = self._fetch_embedding_rows(island_idx=island_idx)
+        if not rows:
+            return None
+
+        query_vec = np.asarray(code_embedding, dtype=np.float32)
+        q_norm = np.linalg.norm(query_vec)
+        if q_norm == 0:
+            return None
+
+        best_program_id: Optional[str] = None
+        best_score = -1.0
+
+        for program_id, emb in rows:
+            emb_vec = np.asarray(emb, dtype=np.float32)
+            if emb_vec.size != query_vec.size:
+                continue
+            emb_norm = np.linalg.norm(emb_vec)
+            if emb_norm == 0:
+                continue
+            sim = float(np.dot(query_vec, emb_vec) / (q_norm * emb_norm))
+            if math.isfinite(sim) and sim > best_score:
+                best_score = sim
+                best_program_id = program_id
+
+        return self.get(best_program_id) if best_program_id else None
