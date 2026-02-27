@@ -298,6 +298,23 @@ Key insight: Self-improvement works especially well for "agentic" tasks where th
 
 ---
 
+### ALMA: Agentic Long-Term Memory Architecture (2025)
+
+**Paper**: [ALMA: Agentic Long-Term Memory Architecture for LLM Agents](https://arxiv.org/abs/2505.20290)
+
+ALMA focuses on durable, retrieval-friendly memory for autonomous agents:
+
+- **Structured long-term memory**: Stores and organizes past agent experience for reuse across tasks
+- **Memory-grounded reasoning**: Uses retrieved context to improve planning and reduce repeated mistakes
+- **Agentic workflows**: Designed for multi-step autonomous settings where context must persist over long horizons
+
+**Relevance to Genesis**:
+
+- Complements Genesis meta-memory and archive mechanisms for cross-generation knowledge retention
+- Useful reference for planned long-term memory integrations (for example, persistent strategy and failure memory)
+
+---
+
 ### OpenR: Advanced Reasoning Framework
 
 **Paper**: [OpenR: An Open Source Framework for Advanced Reasoning with Large Language Models](https://arxiv.org/abs/2410.09671) (2024)
