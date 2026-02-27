@@ -91,24 +91,30 @@ function extractSortKey(filepath: string): string {
 
 // Helper: Resolve database path
 function resolveDatabasePath(dbPath: string): string {
-  // Remove task name prefix if present
-  const parts = dbPath.split('/');
-  let resolvedPath = dbPath;
+  const normalized = path.normalize(dbPath).replace(/^(\.\.(\/|\\|$))+/, '');
+  const parts = normalized.split('/');
 
   // Try with and without prefix
   const candidates = [
-    path.join(SEARCH_ROOT, dbPath),
+    path.join(SEARCH_ROOT, normalized),
     path.join(SEARCH_ROOT, parts.slice(1).join('/')),
-    path.join(GENESIS_ROOT, dbPath),
+    path.join(GENESIS_ROOT, normalized),
   ];
 
+  const allowedRoots = [path.resolve(SEARCH_ROOT), path.resolve(GENESIS_ROOT)];
+
   for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) {
-      return candidate;
+    const resolved = path.resolve(candidate);
+    const withinAllowedRoot = allowedRoots.some((root) => resolved === root || resolved.startsWith(`${root}${path.sep}`));
+    if (!withinAllowedRoot) {
+      continue;
+    }
+    if (fs.existsSync(resolved)) {
+      return resolved;
     }
   }
 
-  return path.join(SEARCH_ROOT, dbPath);
+  return path.resolve(path.join(SEARCH_ROOT, normalized));
 }
 
 // GET /list_databases
@@ -297,6 +303,10 @@ app.get('/get_meta_content', (req, res) => {
     return res.status(400).json({ error: 'db_path and generation parameters required' });
   }
 
+  if (!/^\d+$/.test(generation)) {
+    return res.status(400).json({ error: 'generation must be an integer' });
+  }
+
   const resolvedPath = resolveDatabasePath(dbPath);
   const dbDir = path.dirname(resolvedPath);
   const metaFilename = `meta_${generation}.txt`;
@@ -329,6 +339,10 @@ app.get('/download_meta_pdf', (req, res) => {
 
   if (!dbPath || !generation) {
     return res.status(400).json({ error: 'db_path and generation parameters required' });
+  }
+
+  if (!/^\d+$/.test(generation)) {
+    return res.status(400).json({ error: 'generation must be an integer' });
   }
 
   const resolvedPath = resolveDatabasePath(dbPath);

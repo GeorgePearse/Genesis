@@ -6,6 +6,14 @@ import numpy as np
 import pickle
 from typing import Callable, Any, Dict, List, Tuple, Optional
 
+# OBJECTIVE EVOLUTION NOTE (SAGA Paper):
+# Currently, aggregate_metrics_fn must return a dict with 'combined_score'.
+# SAGA-inspired extension could support:
+# 1. Return multiple raw metrics without combined_score
+# 2. ObjectiveEvolver computes combined_score from current weights
+# 3. Weights evolve based on reward hacking detection
+# See docs/saga_integration.md for design proposal.
+
 DEFAULT_METRICS_ON_ERROR = {
     "combined_score": 0.0,
     "execution_time_mean": 0.0,
