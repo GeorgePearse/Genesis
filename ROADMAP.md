@@ -8,13 +8,13 @@ Genesis aims to be the universal framework for LLM-driven code evolution across 
 
 ## Current Language Support
 
-| Language | Local | Slurm | E2B (base) | E2B (custom) | Notes |
-|----------|:-----:|:-----:|:----------:|:------------:|-------|
-| **Python** | ✅ | ✅ | ✅ | ✅ | First-class support, all features |
-| **Rust** | ✅ | ✅ | ❌ | ✅ | Needs `rustc` in environment |
-| **C++** | ✅ | ✅ | ❌ | ✅ | Needs `g++` or `clang++` |
-| **CUDA** | ⚠️ | ✅ | ❌ | ❌ | Requires GPU + `nvcc` |
-| **JavaScript/TypeScript** | ✅ | ✅ | ✅ | ✅ | Node.js available in E2B base |
+| Language | Local | E2B (base) | E2B (custom) | Notes |
+|----------|:-----:|:----------:|:------------:|-------|
+| **Python** | ✅ | ✅ | ✅ | First-class support, all features |
+| **Rust** | ✅ | ❌ | ✅ | Needs `rustc` in environment |
+| **C++** | ✅ | ❌ | ✅ | Needs `g++` or `clang++` |
+| **CUDA** | ⚠️ | ❌ | ❌ | Requires GPU + `nvcc` |
+| **JavaScript/TypeScript** | ✅ | ✅ | ✅ | Node.js available in E2B base |
 
 ### Adding New Language Support
 
@@ -35,8 +35,6 @@ See `examples/mask_to_seg_rust/` for a complete Rust example.
 | Backend | Status | Parallelism | GPU Support | Best For |
 |---------|:------:|:-----------:|:-----------:|----------|
 | **Local** | ✅ Done | 1-4 jobs | If available | Development, testing |
-| **Slurm (Docker)** | ✅ Done | Unlimited | ✅ Yes | HPC clusters |
-| **Slurm (Conda)** | ✅ Done | Unlimited | ✅ Yes | HPC clusters |
 | **E2B** | ✅ Done | ~50 jobs | ❌ No | Cloud parallel execution |
 | **Modal** | 🔜 Planned | Unlimited | ✅ Yes | Serverless GPU |
 | **Ray** | 💭 Idea | Unlimited | ✅ Yes | Distributed clusters |
@@ -312,7 +310,7 @@ Genesis already has a basic MCP (Model Context Protocol) server ([`genesis/mcp_s
 
 - [x] Core evolution framework with island model
 - [x] Local execution backend
-- [x] Slurm cluster support (Docker + Conda)
+- [x] E2B cloud sandbox support
 - [x] E2B cloud sandbox integration
 - [x] Python language support
 - [x] Rust language support (single-file)

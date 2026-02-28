@@ -37,7 +37,7 @@
 
 ## Configuration & Secrets
 - Store API keys in `.env` (see `docs/getting_started.md`); never commit secrets or experiment artifacts.
-- For multi-node or Slurm runs, duplicate configs into `configs/custom/` and document cluster dependencies in the PR.
+- For multi-node or E2B runs, duplicate configs into `configs/custom/` and document cluster dependencies in the PR.
 
 ## Merging Upstream Updates (Syncing with SakanaAI/ShinkaEvolve)
 

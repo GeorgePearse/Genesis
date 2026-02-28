@@ -21,17 +21,9 @@ evaluate_function:
   seed: 42
 
 distributed_job_config:
-  _target_: genesis.launch.SlurmCondaJobConfig
-  modules:
-  - "cuda/12.4"
-  - "cudnn/8.9.7"
-  - "hpcx/2.20"
+  _target_: genesis.launch.LocalJobConfig
   eval_program_path: "genesis/eval_hydra.py"
-  conda_env: "genesis"
-  time: "00:10:00" 
-  cpus: 1
-  gpus: 0
-  mem: "8G"
+  time: "00:10:00"
 
 evo_config:
   task_sys_msg: |
@@ -47,6 +39,6 @@ evo_config:
     initial_file_path: examples/novelty_generator/initial.py
     insert_start: generate_novelty
     insert_end: generate_novelty
-  job_type: "slurm_conda"
+  job_type: "local"
 
 exp_name: "genesis_novelty_generator_llm_judge"
