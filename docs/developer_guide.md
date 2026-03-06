@@ -21,6 +21,7 @@
 - Modules, files, and functions use `snake_case`; classes follow `PascalCase`.
 - Keep experiment configs declarative; prefer Hydra overrides (`genesis_launch +foo=bar`) over ad-hoc scripts.
 - Document non-obvious behaviors with concise docstrings referencing evaluation assumptions.
+- For creating new tasks, see the [Creating Custom Tasks](creating_tasks.md) guide.
 
 ## Testing Guidelines
 - Favor pytest parameterization to cover candidate mutation edge cases.
@@ -36,11 +37,13 @@
 
 ## Configuration & Secrets
 - Store API keys in `.env` (see `docs/getting_started.md`); never commit secrets or experiment artifacts.
-- For multi-node or Slurm runs, duplicate configs into `configs/custom/` and document cluster dependencies in the PR.
+- For multi-node or E2B runs, duplicate configs into `configs/custom/` and document cluster dependencies in the PR.
 
 ## Merging Upstream Updates (Syncing with SakanaAI/ShinkaEvolve)
 
 The Genesis repository is a fork/derivative of [SakanaAI/ShinkaEvolve](https://github.com/SakanaAI/ShinkaEvolve). We maintain a different package name (`genesis` instead of `shinka`) and custom features (E2B integration, etc.), which requires care when merging upstream updates.
+
+See [E2B Integration](e2b_integration.md) for details on our cloud sandbox features.
 
 **Workflow:**
 

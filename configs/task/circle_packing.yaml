@@ -4,17 +4,9 @@ evaluate_function:
   results_dir: ???
 
 distributed_job_config:
-  _target_: genesis.launch.SlurmCondaJobConfig
-  modules:
-  - "cuda/12.4"
-  - "cudnn/8.9.7"
-  - "hpcx/2.20"
+  _target_: genesis.launch.LocalJobConfig
   eval_program_path: "genesis/eval_hydra.py"
-  conda_env: "genesis"
-  time: "00:10:00" 
-  cpus: 1
-  gpus: 0
-  mem: "8G"
+  time: "00:10:00"
 
 evo_config:
   task_sys_msg: |
@@ -32,6 +24,6 @@ evo_config:
     Be creative and try to find a new solution.
   language: "python"
   init_program_path: "examples/circle_packing/initial.py"
-  job_type: "slurm_conda"
+  job_type: "local"
 
 exp_name: "genesis_circle_packing"

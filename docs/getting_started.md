@@ -19,7 +19,7 @@ Genesis enables automated exploration and improvement of scientific code by:
 
 - **Evolutionary Search**: Maintains a population of programs that evolve over generations
 - **LLM-Powered Mutations**: Uses LLMs as intelligent mutation operators to suggest code improvements
-- **Parallel Evaluation**: Supports parallel evaluation locally or on Slurm clusters
+- **Parallel Evaluation**: Supports parallel evaluation locally or in E2B cloud sandboxes
 - **Knowledge Transfer**: Maintains archives of successful solutions for cross-pollination between evolutionary islands
 - **Scientific Focus**: Optimized for tasks with verifiable correctness and performance metrics
 
@@ -92,6 +92,7 @@ Create a `.env` file in the project root with your API keys:
 # .env file
 OPENAI_API_KEY=sk-proj-your-key-here
 ANTHROPIC_API_KEY=your-anthropic-key-here  # Optional
+CLICKHOUSE_URL=http://default:@localhost:8123/default  # Optional: For advanced logging
 ```
 
 ### Step 4: Verify Installation
@@ -333,6 +334,12 @@ The `run_genesis_eval` function returns three values:
 
 ## Advanced Usage
 
+### E2B Cloud Sandboxes
+
+Genesis supports running evaluations in secure cloud sandboxes using E2B. This allows for massive parallelism and isolation.
+
+See the [E2B Integration Guide](e2b_integration.md) for setup and usage instructions.
+
 ### Environment Management for Local Jobs
 
 When running jobs locally, you have several options for managing Python environments:
@@ -364,6 +371,8 @@ This is particularly useful when:
 2. **Initial Solution**: Write `initial.py` with `EVOLVE-BLOCK` markers
 3. **Evaluation Script**: Create `evaluate.py` with validation logic
 4. **Variant Config**: Combine settings in `configs/variant/my_variant.yaml`
+
+For a detailed walkthrough, see the [Creating Custom Tasks Guide](creating_tasks.md).
 
 For detailed configuration options, parameter explanations, and advanced patterns, see the [Configuration Guide](configuration.md).
 
@@ -455,6 +464,14 @@ genesis_launch variant=my_variant verbose=true
 - See the [Configuration Guide](configuration.md) for detailed parameter explanations
 - Examine the generated experiment logs in the results directory
 
+### Advanced Debugging & Logging
+
+For deep analysis of evolutionary runs, enabling comprehensive logging is essential. Future versions of Genesis will include a robust search engine (e.g., vector database, elasticsearch) to trace LLM reasoning chains and allow you to search through the entire history of "what the LLMs were actually thinking" across all generations.
+
+### Meta-Strategy Experimentation
+
+We are working on features to allow automated experimentation across entirely different evolutionary strategies (not just parameter tuning). This will enable users to compare approaches like standard Island Models, MAP-Elites, and FunSearch-style evolution to find the best fit for their specific domain.
+
 ## Next Steps
 
 Now that you have Genesis running:
@@ -463,5 +480,13 @@ Now that you have Genesis running:
 2. **Explore the WebUI**: See the [WebUI Guide](webui.md) to visualize how solutions evolve
 3. **Create Custom Tasks**: Adapt the framework to your specific optimization problems
 4. **Scale Up**: Deploy on clusters for large-scale evolutionary experiments
+5. **Optimize Model Selection**: Use the dynamic selection feature (`llm_dynamic_selection=ucb`) which treats picking the best LLM as a multi-armed bandit sampling problem (specifically Asymmetric UCB), automatically converging on the most effective models for your task. Other strategies like `Thompson Sampling` or `Exp3` could also be implemented for different exploration-exploitation trade-offs.
+6. **Maximized Code View**: In the WebUI, clicking on a program now opens a maximized code view for better readability. This allows you to focus entirely on the evolved solution.
+
+### Future Development
+
+We are actively working on improving the local development experience:
+- **Terminal UI**: A rich terminal dashboard to monitor evolution without a browser.
+- **Unified Launcher**: Single command to launch evolution and UI together.
 
 Happy evolving! 🧬

@@ -2,6 +2,58 @@
 
 This directory contains utility scripts for the Genesis project.
 
+## test_clickhouse.py
+
+**Purpose**: Verify ClickHouse connection and display table schemas.
+
+**What it does**:
+- Loads `.env` file to get `CLICKHOUSE_URL`
+- Tests connection to ClickHouse database
+- Lists all Genesis tables with row counts
+- Shows schema (columns and types) for each table
+- Runs example queries to verify data access
+- Provides diagnostic information for troubleshooting
+
+**Usage**:
+```bash
+# Run with system Python (loads .env automatically)
+python scripts/test_clickhouse.py
+
+# Or use the venv Python
+~/.venv/bin/python scripts/test_clickhouse.py
+```
+
+**Expected Output**:
+```
+============================================================
+Genesis ClickHouse Connection Test
+============================================================
+
+✅ ClickHouse connection successful!
+   Connected to database: default
+
+============================================================
+Tables in database:
+============================================================
+
+📊 evolution_runs
+   Rows: 0
+   Schema:
+      • run_id: String
+      • start_time: DateTime64(3)
+      • task_name: String
+      ...
+```
+
+**Requirements**:
+- `CLICKHOUSE_URL` environment variable set in `.env`
+- `clickhouse-connect` package installed (`uv pip install clickhouse-connect`)
+
+**Troubleshooting**:
+- If connection fails, check your `.env` file has `CLICKHOUSE_URL=https://user:pass@host:port/db`
+- Ensure ClickHouse server is accessible (check firewall/network)
+- Verify credentials are correct
+
 ## check_pinned_deps.py
 
 **Purpose**: Pre-commit hook to enforce dependency pinning in `pyproject.toml`.

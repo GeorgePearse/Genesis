@@ -49,6 +49,10 @@ evo_config:
   task_sys_msg: "???"             # System message for LLM
   job_type: "local"                # Job execution type
   results_dir: ${output_dir}       # Results directory
+  
+  # Web Search Configuration
+  web_search_enabled: false        # Enable web search for agents
+  web_search_prob: 0.1             # Probability (0-1) of using search per attempt
 ```
 
 ### 2. Database Config (`db_config`)
@@ -87,22 +91,6 @@ job_config:
   eval_program_path: "genesis/evaluate.py"
 ```
 
-#### Slurm Cluster Execution
-```yaml
-job_config:
-  _target_: genesis.launch.SlurmCondaJobConfig
-  modules:                         # Environment modules
-    - "cuda/12.4"
-    - "cudnn/8.9.7"
-    - "hpcx/2.20"
-  eval_program_path: "genesis/utils/eval_hydra.py"
-  conda_env: "genesis"              # Conda environment name
-  time: "01:00:00"                 # Maximum job runtime
-  cpus: 4                          # CPU cores per job
-  gpus: 1                          # GPUs per job
-  mem: "16G"                       # Memory per job
-```
-
 ### 4. Task Config
 
 Defines problem-specific settings and evaluation functions:
@@ -116,7 +104,7 @@ evaluate_function:
 
 # Job configuration for this task
 distributed_job_config:
-  _target_: genesis.launch.SlurmCondaJobConfig
+  _target_: genesis.launch.LocalJobConfig
   # ... resource requirements ...
 
 # Evolution settings specific to this task
@@ -126,7 +114,7 @@ evo_config:
     Key insights: [domain knowledge]
   language: "python"
   init_program_path: "examples/my_task/initial.py"
-  job_type: "slurm_conda"
+  job_type: "local"
 
 exp_name: "genesis_my_task"
 ```
@@ -145,6 +133,8 @@ exp_name: "genesis_my_task"
 | `patch_type_probs` | list | `[0.5, 0.5]` | Probabilities for patch types |
 | `language` | str | `"python"` | Programming language |
 | `embedding_model` | str | `"text-embedding-3-small"` | Model for code embeddings |
+| `web_search_enabled` | bool | `false` | Enable agents to search the web |
+| `web_search_prob` | float | `0.1` | Probability of using web search per attempt |
 
 ### Database Parameters
 
@@ -164,12 +154,8 @@ exp_name: "genesis_my_task"
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `time` | str | `"01:00:00"` | Maximum job runtime (HH:MM:SS) |
-| `cpus` | int | 4 | CPU cores per job |
-| `gpus` | int | 0 | GPUs per job |
-| `mem` | str | `"8G"` | Memory per job |
-| `conda_env` | str | `"genesis"` | Conda environment name |
-| `modules` | list | `[]` | Environment modules to load |
+| `time` | str | `None` | Maximum job runtime (HH:MM:SS) |
+| `conda_env` | str | `None` | Conda environment for local jobs |
 
 ## Pre-configured Variants
 
@@ -214,7 +200,7 @@ configs/
 ├── cluster/              # Execution environments
 │   ├── local.yaml        # Local execution
 │   ├── gcp.yaml          # Google Cloud Platform
-│   └── remote.yaml       # Remote Slurm clusters
+│   └── e2b.yaml          # E2B cloud sandboxes
 ├── database/             # Evolution database settings
 │   ├── island_small.yaml # Small-scale evolution (2 islands)
 │   ├── island_medium.yaml# Medium-scale evolution (4 islands)
@@ -336,6 +322,19 @@ evo_config:
     strategy: "performance_based"
     window_size: 10
 ```
+
+### Web Search Integration
+
+Enable agents to search the web for documentation, libraries, and coding patterns. This is particularly useful for tasks involving niche libraries or new APIs.
+
+```yaml
+evo_config:
+  web_search_enabled: true
+  web_search_prob: 0.1     # 10% chance per patch attempt
+```
+
+- **`web_search_enabled`**: When set to `true`, agents are equipped with a search tool.
+- **`web_search_prob`**: Controls how frequently the search tool is made available to the agent. A lower probability (e.g., `0.1`) encourages the agent to rely mostly on its internal knowledge but allows for occasional external lookups when stuck.
 
 ## Configuration Examples
 

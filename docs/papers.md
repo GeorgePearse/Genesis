@@ -1,4 +1,4 @@
-# Recent Papers on LLM-Driven Code Evolution (2024-2025)
+# Recent Papers on LLM-Driven Code Evolution (2024-2026)
 
 This page surveys the rapidly evolving field of LLM-driven code evolution, genetic programming with language models, and automated program synthesis. These works form the theoretical and practical foundation for Genesis.
 
@@ -167,6 +167,24 @@ SEIDR (Synthesize, Execute, Instruct, Debug, Rank) addresses the "near-miss synd
 
 ---
 
+### AutoHarness: Synthesizing Safety Harnesses for LLM Agents (ICLR 2026 Workshop RSI)
+
+**Paper**: [AUTOHARNESS: IMPROVING LLM AGENTS BY AUTOMATICALLY SYNTHESIZING A CODE HARNESS](https://openreview.net/forum?id=g9rEYVNn5T) (OpenReview, published March 5, 2026)
+
+AutoHarness focuses on agent reliability by evolving/synthesizing executable code harnesses around LLM agents, then iteratively refining those harnesses from environment feedback.
+
+**Why it matters for Genesis**:
+
+- Reinforces a "code-as-policy" pattern where generated code can replace runtime LLM decisions in constrained environments.
+- Provides a concrete strategy for hard safety constraints (e.g., illegal action prevention) that could be adapted into evaluator-side guardrails.
+- Suggests an additional optimization target beyond raw score: reliability under environment rules.
+
+**Key reported result**:
+
+- The authors report eliminating illegal moves across 145 TextArena games via synthesized harnesses, with smaller models outperforming larger baselines in their setup.
+
+---
+
 ### EvoPrompting: Neural Architecture Search
 
 **Paper**: [EvoPrompting: Language Models for Code-Level Neural Architecture Search](https://arxiv.org/abs/2302.14838) (NeurIPS 2023)
@@ -206,6 +224,82 @@ Uses evolutionary Genetic Improvement to refine LLM-generated code using test ca
 
 ---
 
+## Optimization & Black-Box Search
+
+### Large Language Models as Optimizers (OPRO)
+**Paper**: [Large Language Models as Optimizers](https://arxiv.org/pdf/2309.03409) (ICLR 2024)
+Proposes "Optimization by PROmpting," where the LLM iteratively generates new solutions from the natural language history of past solutions and their scores, effectively treating the LLM as the optimizer itself.
+
+### Language Model Crossover (LMX)
+**Paper**: [Language Model Crossover: Variation through Few-Shot Prompting](https://arxiv.org/pdf/2302.12170) (2023)
+Introduces a variation operator based on few-shot prompting to semantically "crossover" parent strings via an LLM, showing strong performance in text-based evolutionary tasks.
+
+### EvoLLM
+**Paper**: [Large Language Models As Evolution Strategies](https://arxiv.org/pdf/2402.18381) (2024)
+Explores using LLMs to replace traditional Gaussian mutation and crossover operators in Evolution Strategies (ES) for black-box optimization tasks.
+
+### Quality-Diversity through AI Feedback (QDAIF)
+**Paper**: [Quality-Diversity through AI Feedback](https://arxiv.org/pdf/2310.13032v4) (NeurIPS Workshop 2023)
+Replaces the human or simulator in Quality-Diversity search with an AI model (like an LLM or VLM) to evaluate both the "quality" and "diversity" of creative artifacts.
+
+### OptiMUS
+**Paper**: [OptiMUS: Optimization Modeling Using MIP Solvers and Large Language Models](https://arxiv.org/pdf/2310.06116) (2023)
+Combines LLMs with mixed-integer programming (MIP) solvers, where the LLM formulates the optimization model from natural language and the solver finds the optimal solution.
+
+---
+
+## Prompt Evolution
+
+### Promptbreeder
+**Paper**: [Promptbreeder: Self-Referential Self-Improvement Via Prompt Evolution](https://arxiv.org/pdf/2309.16797) (2023)
+A self-improving system that evolves both the task-prompts and the "mutation-prompts" that modify them, enabling an open-ended evolutionary loop for prompt optimization.
+
+### EvoPrompt
+**Paper**: [Connecting Large Language Models with Evolutionary Algorithms Yields Powerful Prompt Optimizers](https://arxiv.org/pdf/2309.08532) (ICLR 2024)
+Connects LLMs with evolutionary algorithms to optimize discrete prompts by generating a population of candidate prompts and evolving them based on performance metrics.
+
+### Genetic Prompt Search (GPS)
+**Paper**: [GPS: Genetic Prompt Search for Efficient Few-shot Learning](https://arxiv.org/pdf/2210.17041) (EMNLP 2022)
+Applies genetic algorithms to automatically search for high-performing few-shot prompts for classification tasks, outperforming manual engineering.
+
+### GrIPS
+**Paper**: [GrIPS: Gradient-free, Edit-based Instruction Search for Prompting Large Language Models](https://arxiv.org/pdf/2203.07281) (EACL 2023)
+A gradient-free, edit-based search method for instructions that iteratively improves prompts by making character-level and word-level edits.
+
+---
+
+## Model Merging & Architecture Search
+
+### Evolutionary Model Merge
+**Paper**: [Evolutionary Optimization of Model Merging Recipes](https://www.nature.com/articles/s42256-024-00975-8) (Nature Machine Intelligence, 2025)
+Applies evolutionary search to discover optimal "recipes" (weights and layer permutations) for merging multiple Large Language Models, significantly outperforming manual merging strategies.
+
+### AutoBERT-Zero
+**Paper**: [AutoBERT-Zero: Evolving BERT Backbone from Scratch](https://arxiv.org/pdf/2107.07445) (AAAI 2022)
+Uses evolutionary search to discover effective BERT-like architectures from primitive operations without relying on human-designed backbones or heuristics.
+
+### LiteTransformerSearch
+**Paper**: [LiteTransformerSearch: Training-free Neural Architecture Search for Efficient Language Models](https://arxiv.org/pdf/2203.02094) (NeurIPS 2022)
+A training-free neural architecture search method for efficient language models that estimates performance without full training.
+
+---
+
+## Reinforcement Learning & Reward Design
+
+### Eureka
+**Paper**: [Eureka: Human-Level Reward Design via Coding Large Language Models](https://arxiv.org/pdf/2310.12931) (ICLR 2024)
+Uses Coding LLMs to evolutionary optimize reward functions for Reinforcement Learning, enabling agents to learn complex dexterous skills (like pen-spinning) that were previously unsolvable.
+
+### OpenELM
+**Paper**: [The OpenELM Library: Leveraging Progress in Language Models for Novel Evolutionary Algorithms](https://arxiv.org/pdf/2404.16906) (2024)
+An open-source library that leverages LLMs for novel evolutionary algorithms, specifically focusing on code generation and maintaining diversity in the population.
+
+### Evolution through Large Models (ELM)
+**Paper**: [Evolution through Large Models](https://arxiv.org/pdf/2206.08896) (2022)
+The precursor to OpenELM, demonstrating that LLMs can act as intelligent mutation operators in an open-ended evolutionary loop, generating increasingly complex programs.
+
+---
+
 ## Self-Improving Systems
 
 ### SICA: Self-Improving Coding Agent (ICLR 2025)
@@ -219,6 +313,83 @@ An LLM coding agent that autonomously edits its own codebase to improve performa
 - **Generalization**: Also improves on LiveCodeBench and synthetic benchmarks
 
 Key insight: Self-improvement works especially well for "agentic" tasks where the base LLM benefits from additional structure and guidance.
+
+---
+
+### ALMA: Agentic Long-Term Memory Architecture (2025)
+
+**Paper**: [ALMA: Agentic Long-Term Memory Architecture for LLM Agents](https://arxiv.org/abs/2505.20290)
+
+ALMA focuses on durable, retrieval-friendly memory for autonomous agents:
+
+- **Structured long-term memory**: Stores and organizes past agent experience for reuse across tasks
+- **Memory-grounded reasoning**: Uses retrieved context to improve planning and reduce repeated mistakes
+- **Agentic workflows**: Designed for multi-step autonomous settings where context must persist over long horizons
+
+**Relevance to Genesis**:
+
+- Complements Genesis meta-memory and archive mechanisms for cross-generation knowledge retention
+- Useful reference for planned long-term memory integrations (for example, persistent strategy and failure memory)
+
+---
+
+### OpenR: Advanced Reasoning Framework
+
+**Paper**: [OpenR: An Open Source Framework for Advanced Reasoning with Large Language Models](https://arxiv.org/abs/2410.09671) (2024)
+
+**GitHub**: [openreasoner/openr](https://github.com/openreasoner/openr)
+
+**Website**: [openreasoner.github.io](https://openreasoner.github.io/)
+
+An open-source framework for advanced reasoning with LLMs, combining process supervision, reward models, and search strategies:
+
+- **Process Supervision**: Automated process supervision (OmegaPRM) for improving mathematical reasoning
+- **Reward Models**: Both discriminative PRM and generative reward model training
+- **Search Strategies**: Greedy search, Best-of-N, Beam search, MCTS, rStar (mutual reasoning)
+- **RL Training**: Online policy training with APPO, GRPO, TPPO algorithms
+- **Test-time Scaling**: Systematic exploration of test-time computation vs model parameters
+
+**Key Results**:
+
+- Process reward models (Math-psa) outperform outcome-based verifiers
+- MCTS-based search improves reasoning performance over greedy decoding
+- Test-time compute scaling can be more effective than parameter scaling
+- Open-source datasets and models for mathematical reasoning
+
+**Applications**: Mathematical reasoning (MATH dataset), multi-step problem solving, self-verification.
+
+---
+
+### SAGA: Self-Adapting Goal-Evolving Agents (2024)
+
+**Paper**: [SAGA: Autonomous Goal-Evolving Agents for Scientific Discovery](https://arxiv.org/html/2512.21782v1)
+
+An autonomous system that evolves both solutions AND objectives through bi-level optimization:
+
+- **Bi-Level Optimization**:
+  - Inner loop: Optimize solutions for current objectives (similar to Genesis)
+  - Outer loop: Evolve objectives themselves based on results and failure analysis
+- **Four Agentic Modules**: Planner (goal decomposition), Implementer (code generation), Optimizer (solution search), Analyzer (reward hacking detection)
+- **Three Autonomy Levels**: Co-pilot (human-guided), semi-pilot (human review), autopilot (fully autonomous)
+- **Multi-Objective Balancing**: Dynamically reweights competing objectives to prevent reward hacking
+
+**Key Results**:
+
+- **Antibiotic Design**: Generated drug-like K. pneumoniae inhibitors balancing efficacy and synthesizability
+- **Materials Science**: Designed permanent magnets and superhard materials validated by DFT calculations
+- **DNA Design**: ~50% improvement over baselines for cell-type-specific enhancers
+- **Chemical Engineering**: Automated discovery of practical constraints in process flowsheet design
+
+**Relevance to Genesis**:
+
+Genesis excels at the "inner loop" (evolving code for fixed objectives). SAGA's "outer loop" (objective evolution) addresses Genesis's limitation of static `evaluate.py` functions. Key opportunities:
+
+1. **Dynamic Fitness Functions**: Detect reward hacking and evolve objectives automatically
+2. **Modular Architecture**: SAGA's four-module design (Planner/Implementer/Optimizer/Analyzer) provides clean abstraction that could improve Genesis's structure
+3. **Multi-Objective Optimization**: Track Pareto frontier instead of single `combined_score`
+4. **Human-in-the-Loop**: Add intervention points for reviewing objective changes
+
+See [`docs/saga_integration.md`](saga_integration.md) for detailed integration design and [`docs/modular_architecture.md`](modular_architecture.md) for proposed refactoring.
 
 ---
 

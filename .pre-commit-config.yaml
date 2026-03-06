@@ -34,3 +34,12 @@ repos:
         language: docker_image
         types: ["dockerfile"]
         entry: hadolint/hadolint:v2.12.0 hadolint
+
+  - repo: local
+    hooks:
+      - id: oxlint
+        name: oxlint (frontend)
+        entry: bash -c 'cd genesis/webui/frontend && npx oxlint src/'
+        language: system
+        files: ^genesis/webui/frontend/src/.*\.(ts|tsx|js|jsx)$
+        pass_filenames: false

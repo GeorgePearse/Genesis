@@ -14,11 +14,13 @@
 
 [`Genesis`](https://genesis.ai) is a framework that combines Large Language Models (LLMs) with evolutionary algorithms to drive scientific discovery. By leveraging the creative capabilities of LLMs and the optimization power of evolutionary search, `Genesis` enables automated exploration and improvement of scientific code. 
 
+<img width="1470" height="777" alt="image" src="https://github.com/user-attachments/assets/1b43c013-16bc-462e-abb3-ea14d10fad46" />
+
 > **Note**: This implementation is based on and extends [Shinka AI](https://github.com/shinkadotai/shinka), an open-source platform for LLM-driven code evolution. We are grateful to the original authors for their foundational work.
 
-The system is inspired by the [AI Scientist](https://sakana.ai/ai-scientist/), [AlphaEvolve](https://deepmind.google/discover/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/), and [Darwin Goedel Machine](https://sakana.ai/dgm/). It maintains a population of programs that evolve over generations, with an ensemble of LLMs acting as intelligent mutation operators that suggest code improvements.
+The system is inspired by the [AI Scientist](https://sakana.ai/ai-scientist/), [AlphaEvolve](https://deepmind.google/discover/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/), and [Darwin Goedel Machine](https://sakana.ai/dgm/). It also draws on recent long-horizon memory work such as [ALMA](https://arxiv.org/abs/2505.20290) for persistent agent memory design. It maintains a population of programs that evolve over generations, with an ensemble of LLMs acting as intelligent mutation operators that suggest code improvements.
 
-The framework supports **parallel evaluation of candidates** locally, on a Slurm cluster, or in cloud sandboxes. It maintains an archive of successful solutions, enabling knowledge transfer between different evolutionary islands. `Genesis` is particularly well-suited for scientific tasks where there is a verifier available and the goal is to optimize performance metrics while maintaining code correctness and readability.
+The framework supports **parallel evaluation of candidates** locally or in cloud sandboxes (E2B). It maintains an archive of successful solutions, enabling knowledge transfer between different evolutionary islands. `Genesis` is particularly well-suited for scientific tasks where there is a verifier available and the goal is to optimize performance metrics while maintaining code correctness and readability.
 
 ![](docs/conceptual.png)
 
@@ -28,6 +30,8 @@ The framework supports **parallel evaluation of candidates** locally, on a Slurm
 |-------|-------------|-------------------|
 | 🚀 **[Getting Started](docs/getting_started.md)** | Installation, basic usage, and examples | Setup, first evolution run, core concepts |
 | 📓 **[Tutorial Notebook](examples/genesis_tutorial.ipynb)** | Interactive walkthrough of Genesis features | Hands-on examples, configuration, best practices |
+| 🛠️ **[Creating Tasks](docs/creating_tasks.md)** | Guide to creating custom tasks | File structure, evaluation scripts, configuration |
+| ☁️ **[E2B Integration](docs/e2b_integration.md)** | Running evaluations in cloud sandboxes | Setup, configuration, dependencies |
 | ⚙️ **[Configuration](docs/configuration.md)** | Comprehensive configuration reference | All config options, optimization settings, advanced features |
 | 🎨 **[WebUI](docs/webui.md)** | Interactive visualization and monitoring | Real-time tracking, result analysis, debugging tools |
 | 🗺️ **[Roadmap](ROADMAP.md)** | Future plans and language support | Supported languages, execution backends, planned features |
@@ -60,6 +64,10 @@ For detailed installation instructions and usage examples, see the [Getting Star
 | 🤖 [Agent Design](examples/adas_aime) | Design agent scaffolds for math tasks. | `LocalJobConfig` |
 | 🎯 [ALE-Bench](examples/ale_bench) | Code optimization for ALE-Bench tasks. | `LocalJobConfig` |
 | ✨ [Novelty Generator](examples/novelty_generator) | Generate creative, surprising outputs (e.g., ASCII art). | `LocalJobConfig` |
+
+### External Test Case Repo
+
+- [GeorgePearse/squeeze](https://github.com/GeorgePearse/squeeze): Explicit external test-case repository used for Genesis optimization experiments.
 
 
 ## `genesis` Run with Python API 🐍
@@ -97,7 +105,7 @@ runner.run()
 | `max_parallel_jobs` | `2` | `int` | Maximum number of parallel evaluation jobs |
 | `max_patch_resamples` | `3` | `int` | Max times to resample a patch if it fails |
 | `max_patch_attempts` | `5` | `int` | Max attempts to generate a valid patch |
-| `job_type` | `"local"` | `str` | Job execution type: "local", "slurm_docker", "slurm_conda" |
+| `job_type` | `"local"` | `str` | Job execution type: "local" or "e2b" |
 | `language` | `"python"` | `str` | Programming language for evolution |
 | `llm_models` | `["azure-gpt-4.1-mini"]` | `List[str]` | List of LLM models for code generation |
 | `llm_dynamic_selection` | `None` | `Optional[Union[str, BanditBase]]` | Dynamic model selection strategy |
@@ -152,32 +160,16 @@ runner.run()
 | `time` | `None` | `Optional[str]` | Time limit for job execution |
 | `conda_env` | `None` | `Optional[str]` | Conda environment to run jobs in |
 
-**SlurmDockerJobConfig** (for SLURM with Docker):
+**E2BJobConfig** (for E2B cloud sandboxes):
 | Key | Default Value | Type | Explanation |
 |-----|---------------|------|-------------|
 | `eval_program_path` | `"evaluate.py"` | `Optional[str]` | Path to evaluation script |
 | `extra_cmd_args` | `{}` | `Dict[str, Any]` | Additional command line arguments |
-| `image` | `"ubuntu:latest"` | `str` | Docker image to use |
-| `image_tar_path` | `None` | `Optional[str]` | Path to Docker image tar file |
-| `docker_flags` | `""` | `str` | Additional Docker flags |
-| `partition` | `"gpu"` | `str` | SLURM partition to use |
-| `time` | `"01:00:00"` | `str` | Job time limit |
-| `cpus` | `1` | `int` | Number of CPUs to request |
-| `gpus` | `1` | `int` | Number of GPUs to request |
-| `mem` | `"8G"` | `Optional[str]` | Memory to request |
-
-**SlurmCondaJobConfig** (for SLURM with Conda):
-| Key | Default Value | Type | Explanation |
-|-----|---------------|------|-------------|
-| `eval_program_path` | `"evaluate.py"` | `Optional[str]` | Path to evaluation script |
-| `extra_cmd_args` | `{}` | `Dict[str, Any]` | Additional command line arguments |
-| `conda_env` | `""` | `str` | Conda environment name |
-| `modules` | `[]` | `Optional[List[str]]` | Environment modules to load |
-| `partition` | `"gpu"` | `str` | SLURM partition to use |
-| `time` | `"01:00:00"` | `str` | Job time limit |
-| `cpus` | `1` | `int` | Number of CPUs to request |
-| `gpus` | `1` | `int` | Number of GPUs to request |
-| `mem` | `"8G"` | `Optional[str]` | Memory to request |
+| `template` | `"base"` | `str` | E2B sandbox template |
+| `timeout` | `300` | `int` | Sandbox timeout in seconds |
+| `dependencies` | `[]` | `Optional[List[str]]` | Pip packages to install |
+| `additional_files` | `{}` | `Optional[Dict[str, str]]` | Files to upload (sandbox_path -> local_path) |
+| `env_vars` | `{}` | `Optional[Dict[str, str]]` | Environment variables to set |
 
 </details>
 
@@ -286,7 +278,9 @@ For comprehensive configuration options and advanced usage, see the [Configurati
 
 Monitor your evolution experiments in real-time with Genesis's interactive web interface! The WebUI provides live visualization of the evolutionary process, genealogy trees, and performance metrics.
 
-![WebUI Screenshot](docs/webui.png)
+![WebUI Screenshot - Programs View](docs/webui-programs.png)
+
+*The Programs view showing evolution results from HNSW optimization, with sortable columns for generation, score, cost, and complexity metrics.*
 
 ### Quick Start
 
@@ -296,8 +290,10 @@ Launch the WebUI alongside your evolution experiment:
 # Start your evolution experiment
 genesis_launch variant=circle_packing_example
 
-# In another terminal, launch the WebUI
-genesis_visualize --port 8888 --open
+# In another terminal, start the frontend
+cd genesis/webui/frontend
+npm install
+npm run dev
 ```
 
 For detailed WebUI documentation, see the [WebUI Guide](docs/webui.md).
@@ -305,8 +301,13 @@ For detailed WebUI documentation, see the [WebUI Guide](docs/webui.md).
 ## Related Open-Source Projects 🧑‍🔧
 
 - **[Shinka AI](https://github.com/shinkadotai/shinka)**: The original implementation that Genesis is based on - a platform for LLM-driven program evolution
+- **[SkyDiscover](https://github.com/skydiscover-ai/skydiscover)**: Modular AI-driven discovery framework with 200+ benchmarks, adaptive algorithms (AdaEvolve, EvoX), quality-diversity archives, and human-in-the-loop feedback
 - [OpenEvolve](https://github.com/codelion/openevolve): An open-source implementation of AlphaEvolve
 - [LLM4AD](https://github.com/Optima-CityU/llm4ad): A Platform for Algorithm Design with Large Language Model
+- [Scale AgentEx](https://github.com/scaleapi/scale-agentex): Automated experimentation and optimization for AI agents
+- [SkyDiscover](https://github.com/BigComputer-Project/SkyThought): Program evolution framework with AdaEvolve/EvoX, quality-diversity archives, and cascade evaluation
+- [AutoHarness (OpenReview)](https://openreview.net/forum?id=g9rEYVNn5T): Agent reliability approach that auto-synthesizes code harnesses to prevent illegal environment actions
+- [nano-trm](https://github.com/olivkoch/nano-trm): Tiny reasoning models
 
 ## Acknowledgments 🙏
 

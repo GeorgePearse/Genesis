@@ -93,24 +93,56 @@ export default function IslandsView() {
     );
   }
 
+  // Dark theme colors
+  const darkTheme = {
+    gridColor: 'rgba(139, 148, 158, 0.1)',
+    textColor: '#8b949e',
+    textColorLight: '#c9d1d9',
+  };
+
   const options = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top' as const,
+        labels: {
+          color: darkTheme.textColorLight,
+          font: { size: 12 },
+          padding: 16,
+        },
       },
       title: {
         display: true,
         text: 'Best Score per Island over Generations',
+        color: '#e6edf3',
+        font: { size: 16, weight: 600 as const },
+      },
+      tooltip: {
+        backgroundColor: '#21262d',
+        titleColor: '#e6edf3',
+        bodyColor: '#c9d1d9',
+        borderColor: '#30363d',
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 8,
       },
     },
     scales: {
+      x: {
+        grid: { color: darkTheme.gridColor },
+        ticks: { color: darkTheme.textColor },
+        border: { display: false },
+      },
       y: {
         title: {
           display: true,
           text: 'Best Score',
+          color: darkTheme.textColor,
         },
+        grid: { color: darkTheme.gridColor },
+        ticks: { color: darkTheme.textColor },
+        border: { display: false },
       },
     },
   };

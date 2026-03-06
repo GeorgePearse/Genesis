@@ -1,6 +1,6 @@
 import type { DatabaseInfo, Program, MetaFile, MetaContent } from '../types';
 
-const API_BASE = '';
+const API_BASE = 'http://localhost:8000';
 
 export async function listDatabases(): Promise<DatabaseInfo[]> {
   const response = await fetch(`${API_BASE}/list_databases`);

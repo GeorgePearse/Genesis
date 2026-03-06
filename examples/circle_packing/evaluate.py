@@ -97,6 +97,21 @@ def aggregate_circle_packing_metrics(
     """
     Aggregates metrics for circle packing. Assumes num_runs=1.
     Saves extra.npz with detailed packing information.
+
+    MULTI-OBJECTIVE NOTE (SAGA Paper):
+    This returns single combined_score (sum of radii). SAGA emphasizes
+    multi-objective optimization with competing goals.
+
+    Potential multi-objective formulation:
+    - Maximize: sum of radii (packing efficiency)
+    - Minimize: variance of radii (uniformity)
+    - Maximize: minimum radius (no tiny circles)
+    - Maximize: symmetry score (aesthetic)
+
+    With objective evolution, Genesis could dynamically balance these
+    based on which objectives are being reward-hacked.
+
+    See examples/saga_objective_evolution/ for prototype.
     """
     if not results:
         return {"combined_score": 0.0, "error": "No results to aggregate"}

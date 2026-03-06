@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import * as d3 from 'd3';
 import { useGenesis } from '../../context/GenesisContext';
-import type { Program } from '../../types';
 import './EmbeddingsView.css';
 
 function cosineSimilarity(vecA: number[], vecB: number[]): number {
@@ -121,37 +120,19 @@ export default function EmbeddingsView() {
     const rows = g.selectAll('.row')
         .data(orderedMatrix)
         .enter().append('g')
-        .attr('transform', (d, i) => `translate(0,${i * cellSize})`);
+        .attr('transform', (_, i) => `translate(0,${i * cellSize})`);
 
     rows.selectAll('.cell')
         .data(d => d)
         .enter().append('rect')
         .attr('class', 'cell')
-        .attr('x', (d, i) => i * cellSize)
+        .attr('x', (_, i) => i * cellSize)
         .attr('width', cellSize)
         .attr('height', cellSize)
         .style('fill', d => colorScale(d))
-        .on('mouseover', (event, d) => {
-            // Tooltip implementation omitted for brevity, relying on React state could be better but D3 tooltip is standard
-            // We can add a simple title for now
-            d3.select(event.currentTarget).append('title').text(`Similarity: ${d.toFixed(3)}`);
-        })
-        .on('click', (event, d) => {
-             // Find indices
-             // This is tricky in D3 click handler without data access
-             // Simplifying: just select if possible. 
-             // Actually we need the index.
-             // Let's use React state for selection if we want robust interaction
+        .on('mouseover', (event: MouseEvent, d) => {
+            d3.select(event.currentTarget as Element).append('title').text(`Similarity: ${d.toFixed(3)}`);
         });
-    
-    // Add click handlers with proper index access
-    rows.each(function(rowData, i) {
-        d3.select(this).selectAll('.cell').on('click', (event, d) => {
-             // Finding j index
-             const j = Math.floor((event.offsetX - margin.left) / cellSize); // approximate
-             // Better way: capture i and j in data binding
-        });
-    });
     
     // Re-implementing cells with indices for click handling
     g.selectAll('*').remove(); // Clear first
@@ -165,7 +146,7 @@ export default function EmbeddingsView() {
                 .attr('height', cellSize)
                 .style('fill', colorScale(val))
                 .style('stroke', 'none')
-                .on('mouseover', function() {
+                .on('mouseover', function(event: MouseEvent) {
                     d3.select(this).style('stroke', '#fff').style('stroke-width', 1);
                     const progA = orderedPrograms[i];
                     const progB = orderedPrograms[j];
@@ -212,6 +193,7 @@ export default function EmbeddingsView() {
         .attr('y', -10)
         .style('text-anchor', 'middle')
         .style('font-size', '10px')
+        .style('fill', '#8b949e')
         .text('Score');
 
     // Island Subplots
@@ -237,19 +219,17 @@ export default function EmbeddingsView() {
             const islandEmbeddings = islandData.map(d => d.embedding!);
             const islandMatrix = computeSimilarityMatrix(islandEmbeddings);
             
-            // Sort island data (default chrono)
-            const islandOrdering = Array.from({length: islandData.length}, (_, i) => i);
-            
             const subCellSize = Math.min(cellSize, 6);
             const subWidth = islandData.length * subCellSize;
             const subHeight = islandData.length * subCellSize;
             
             const subplotDiv = subplotsContainer.append('div')
-                .style('border', '1px solid #ddd')
-                .style('padding', '10px')
-                .style('background', '#fff');
+                .style('border', '1px solid #30363d')
+                .style('padding', '12px')
+                .style('background', '#161b22')
+                .style('border-radius', '8px');
             
-            subplotDiv.append('h5').text(`Island ${islandId} (${islandData.length})`).style('margin', '0 0 10px 0').style('text-align', 'center');
+            subplotDiv.append('h5').text(`Island ${islandId} (${islandData.length})`).style('margin', '0 0 10px 0').style('text-align', 'center').style('color', '#e6edf3').style('font-size', '13px');
             
             const subSvg = subplotDiv.append('svg')
                 .attr('width', subWidth + 20) // minimal margin
@@ -266,7 +246,7 @@ export default function EmbeddingsView() {
                         .attr('height', subCellSize)
                         .style('fill', colorScale(val))
                         .style('stroke', 'none')
-                        .on('mouseover', function() {
+                        .on('mouseover', function(event: MouseEvent) {
                             const progA = islandData[i];
                             const progB = islandData[j];
                             const tooltip = d3.select('.embeddings-tooltip');

@@ -174,7 +174,7 @@ def demo_2_job_scheduler():
     Demo 2: Using the JobScheduler Abstraction
 
     The JobScheduler provides a unified interface for all backends
-    (local, SLURM, E2B). This is the recommended approach for
+    (local, E2B). This is the recommended approach for
     production use.
     """
     print("\n" + "=" * 60)

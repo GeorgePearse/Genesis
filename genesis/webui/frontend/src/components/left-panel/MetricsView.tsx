@@ -8,6 +8,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { useGenesis } from '../../context/GenesisContext';
@@ -20,8 +21,17 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
+
+// Dark theme colors
+const darkTheme = {
+  background: '#161b22',
+  gridColor: 'rgba(139, 148, 158, 0.1)',
+  textColor: '#8b949e',
+  textColorLight: '#c9d1d9',
+};
 
 export default function MetricsView() {
   const { state } = useGenesis();
@@ -87,16 +97,32 @@ export default function MetricsView() {
       {
         label: 'Max Score',
         data: metricsData.maxScores,
-        borderColor: '#2ecc71',
-        backgroundColor: 'rgba(46, 204, 113, 0.1)',
-        tension: 0.1,
+        borderColor: '#3fb950',
+        backgroundColor: 'rgba(63, 185, 80, 0.15)',
+        pointBackgroundColor: '#3fb950',
+        pointBorderColor: '#3fb950',
+        pointHoverBackgroundColor: '#7ee787',
+        pointHoverBorderColor: '#7ee787',
+        tension: 0.3,
+        fill: true,
+        borderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 5,
       },
       {
         label: 'Avg Score',
         data: metricsData.avgScores,
-        borderColor: '#3498db',
-        backgroundColor: 'rgba(52, 152, 219, 0.1)',
-        tension: 0.1,
+        borderColor: '#58a6ff',
+        backgroundColor: 'rgba(88, 166, 255, 0.1)',
+        pointBackgroundColor: '#58a6ff',
+        pointBorderColor: '#58a6ff',
+        pointHoverBackgroundColor: '#a5d6ff',
+        pointHoverBorderColor: '#a5d6ff',
+        tension: 0.3,
+        fill: false,
+        borderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 5,
       },
     ],
   };
@@ -107,10 +133,17 @@ export default function MetricsView() {
       {
         label: 'Cumulative Cost ($)',
         data: metricsData.cumulativeCosts,
-        borderColor: '#e74c3c',
-        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+        borderColor: '#f85149',
+        backgroundColor: 'rgba(248, 81, 73, 0.15)',
+        pointBackgroundColor: '#f85149',
+        pointBorderColor: '#f85149',
+        pointHoverBackgroundColor: '#ffa198',
+        pointHoverBorderColor: '#ffa198',
         fill: true,
-        tension: 0.1,
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 5,
       },
     ],
   };
@@ -118,14 +151,75 @@ export default function MetricsView() {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    interaction: {
+      mode: 'index' as const,
+      intersect: false,
+    },
     plugins: {
       legend: {
         position: 'top' as const,
+        labels: {
+          color: darkTheme.textColorLight,
+          font: {
+            size: 12,
+            family: "'Inter', sans-serif",
+          },
+          padding: 16,
+          usePointStyle: true,
+          pointStyle: 'rect',
+        },
+      },
+      tooltip: {
+        backgroundColor: '#21262d',
+        titleColor: '#e6edf3',
+        bodyColor: '#c9d1d9',
+        borderColor: '#30363d',
+        borderWidth: 1,
+        padding: 12,
+        titleFont: {
+          size: 13,
+          weight: 600 as const,
+        },
+        bodyFont: {
+          size: 12,
+        },
+        cornerRadius: 8,
       },
     },
     scales: {
+      x: {
+        grid: {
+          color: darkTheme.gridColor,
+          drawBorder: false,
+        },
+        ticks: {
+          color: darkTheme.textColor,
+          font: {
+            size: 11,
+          },
+          maxRotation: 45,
+          minRotation: 45,
+        },
+        border: {
+          display: false,
+        },
+      },
       y: {
         beginAtZero: false,
+        grid: {
+          color: darkTheme.gridColor,
+          drawBorder: false,
+        },
+        ticks: {
+          color: darkTheme.textColor,
+          font: {
+            size: 11,
+          },
+          padding: 8,
+        },
+        border: {
+          display: false,
+        },
       },
     },
   };

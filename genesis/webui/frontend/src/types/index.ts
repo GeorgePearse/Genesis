@@ -30,6 +30,8 @@ export interface ProgramMetadata {
   embed_cost?: number;
   novelty_cost?: number;
   meta_cost?: number;
+  llm_result?: LLMResult;
+  model_posteriors?: Record<string, number>;
   [key: string]: unknown;
 }
 
@@ -49,6 +51,10 @@ export interface DatabaseInfo {
   name: string;
   actual_path?: string;
   sort_key?: string;
+  stats?: {
+    total: number;
+    working: number;
+  };
 }
 
 // Meta files
@@ -70,6 +76,10 @@ export interface TasksAndResults {
     name: string;
     path: string;
     sortKey: string;
+    stats?: {
+      total: number;
+      working: number;
+    };
   }[];
 }
 
@@ -97,6 +107,9 @@ export interface AppState {
   isLoading: boolean;
   error: string | null;
   autoRefreshEnabled: boolean;
+  selectedTask: string | null;
+  selectedResult: string | null;
+  isCommandMenuOpen: boolean;
 }
 
 // Computed stats
