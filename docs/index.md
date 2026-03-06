@@ -300,6 +300,9 @@ For detailed WebUI documentation, see the [WebUI Guide](webui.md).
 
 ## Related Open-Source Projects 🧑‍🔧
 
+If you are choosing a primary reference implementation today, **SkyDiscover appears to be the current SOTA** and seems to encompass much of what was previously split across earlier implementations.
+
+- **[SkyDiscover](https://github.com/skydiscover-ai/skydiscover)**: Appears to be the current SOTA; a modular AI-driven discovery framework with 200+ benchmarks, adaptive algorithms (AdaEvolve, EvoX), quality-diversity archives, and human-in-the-loop feedback that encompasses many ideas from prior systems
 - **[Shinka AI](https://github.com/shinkadotai/shinka)**: The original implementation that Genesis is based on - a platform for LLM-driven program evolution
 - [OpenEvolve](https://github.com/codelion/openevolve): An open-source implementation of AlphaEvolve
 - [LLM4AD](https://github.com/Optima-CityU/llm4ad): A Platform for Algorithm Design with Large Language Model
