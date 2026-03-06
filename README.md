@@ -309,6 +309,14 @@ For detailed WebUI documentation, see the [WebUI Guide](docs/webui.md).
 - [AutoHarness (OpenReview)](https://openreview.net/forum?id=g9rEYVNn5T): Agent reliability approach that auto-synthesizes code harnesses to prevent illegal environment actions
 - [nano-trm](https://github.com/olivkoch/nano-trm): Tiny reasoning models
 
+### Potentially Relevant Repos from Dicklesworthstone
+
+- [cass_memory_system](https://github.com/Dicklesworthstone/cass_memory_system): Procedural memory infrastructure for coding agents that is relevant to Genesis memory/history and long-horizon optimization context.
+- [claude_code_agent_farm](https://github.com/Dicklesworthstone/claude_code_agent_farm): Parallel multi-agent coding orchestration patterns that map to Genesis-style distributed exploration and task parallelism.
+- [destructive_command_guard](https://github.com/Dicklesworthstone/destructive_command_guard): Agent safety guardrail for blocking risky shell/git actions, relevant to safer autonomous code-evolution workflows.
+- [coding_agent_session_search](https://github.com/Dicklesworthstone/coding_agent_session_search): Cross-session retrieval/indexing ideas that could inform Genesis run introspection and prior-run reuse.
+- [fast_cmaes](https://github.com/Dicklesworthstone/fast_cmaes): CMA-ES optimization backend that could inspire non-evolutionary or hybrid optimizer integrations for Genesis.
+
 ## Acknowledgments 🙏
 
 Genesis is built upon the excellent work of the [Shinka AI](https://github.com/shinkadotai/shinka) project. We extend our gratitude to the original authors and contributors for creating such a robust foundation for LLM-driven code evolution.
