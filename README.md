@@ -65,6 +65,10 @@ For detailed installation instructions and usage examples, see the [Getting Star
 | 🎯 [ALE-Bench](examples/ale_bench) | Code optimization for ALE-Bench tasks. | `LocalJobConfig` |
 | ✨ [Novelty Generator](examples/novelty_generator) | Generate creative, surprising outputs (e.g., ASCII art). | `LocalJobConfig` |
 
+### External Test Case Repo
+
+- [GeorgePearse/squeeze](https://github.com/GeorgePearse/squeeze): Explicit external test-case repository used for Genesis optimization experiments.
+
 
 ## `genesis` Run with Python API 🐍
 
