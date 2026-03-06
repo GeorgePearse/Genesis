@@ -304,7 +304,7 @@ For detailed WebUI documentation, see the [WebUI Guide](webui.md).
 - [OpenEvolve](https://github.com/codelion/openevolve): An open-source implementation of AlphaEvolve
 - [LLM4AD](https://github.com/Optima-CityU/llm4ad): A Platform for Algorithm Design with Large Language Model
 - [Scale AgentEx](https://github.com/scaleapi/scale-agentex): Automated experimentation and optimization for AI agents
-- [SkyDiscover](https://github.com/BigComputer-Project/SkyThought): Research system with advanced algorithmic scheduling, archive, and evaluation strategies
+- [SkyDiscover](https://github.com/skydiscover-ai/skydiscover): Research system with advanced algorithmic scheduling, archive, and evaluation strategies
 
 ### SkyDiscover Feature Notes
 

@@ -317,7 +317,6 @@ For detailed WebUI documentation, see the [WebUI Guide](docs/webui.md).
 - [OpenEvolve](https://github.com/codelion/openevolve): An open-source implementation of AlphaEvolve
 - [LLM4AD](https://github.com/Optima-CityU/llm4ad): A Platform for Algorithm Design with Large Language Model
 - [Scale AgentEx](https://github.com/scaleapi/scale-agentex): Automated experimentation and optimization for AI agents
-- [SkyDiscover](https://github.com/BigComputer-Project/SkyThought): Program evolution framework with AdaEvolve/EvoX, quality-diversity archives, and cascade evaluation
 - [AutoHarness (OpenReview)](https://openreview.net/forum?id=g9rEYVNn5T): Agent reliability approach that auto-synthesizes code harnesses to prevent illegal environment actions
 - [nano-trm](https://github.com/olivkoch/nano-trm): Tiny reasoning models
 
