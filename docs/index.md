@@ -304,6 +304,26 @@ For detailed WebUI documentation, see the [WebUI Guide](webui.md).
 - [OpenEvolve](https://github.com/codelion/openevolve): An open-source implementation of AlphaEvolve
 - [LLM4AD](https://github.com/Optima-CityU/llm4ad): A Platform for Algorithm Design with Large Language Model
 - [Scale AgentEx](https://github.com/scaleapi/scale-agentex): Automated experimentation and optimization for AI agents
+- [SkyDiscover](https://github.com/BigComputer-Project/SkyThought): Research system with advanced algorithmic scheduling, archive, and evaluation strategies
+
+### SkyDiscover Feature Notes
+
+From a feature-comparison perspective, SkyDiscover includes several capabilities that are not first-class in Genesis today:
+
+- **Novel algorithms**: `AdaEvolve` (UCB-based island scheduling with adaptive exploration intensity and stagnation-triggered breakthrough generation) and `EvoX` (co-evolves both candidate solutions and search algorithm logic, including dynamic database strategy changes).
+- **Archive and evaluation architecture**: Quality-diversity archives combining fitness percentile and novelty percentile, deterministic crowding replacement, cascade evaluation pipelines (`evaluate_stage1` then `evaluate_stage2`), and pluggable diversity metrics (code-structure, behavioral, or hybrid).
+- **Operator generation**: LLM-generated, problem-specific variation operators informed by evaluator code.
+- **Multi-modal and agentic support**: Prompt evolution and image-prompt evolution with vision feedback, plus agentic multi-turn code generation workflows that inspect codebases before proposing edits.
+- **Human feedback loop**: Real-time steering of evolution by editing markdown instructions that can append/replace system guidance.
+- **Benchmark breadth**: Large benchmark coverage (200+) across optimization, reasoning, systems, competitive programming, creative, and NLP workloads.
+
+### Potential Adoption Priorities For Genesis
+
+- **Cascade evaluation pipeline**: Likely the lowest-friction high-impact addition for reducing compute spent on weak candidates.
+- **Quality-diversity archive improvements**: Strong opportunity to improve exploration/exploitation balance and avoid archive collapse.
+- **Human-in-the-loop steering**: Practical UX improvement for guided evolution during long runs.
+- **Research-track follow-up**: `AdaEvolve` and `EvoX` are deeper algorithmic additions that are worth dedicated prototyping and benchmarking.
+- **Reliability harnessing**: [AutoHarness (OpenReview, March 5, 2026)](https://openreview.net/forum?id=g9rEYVNn5T) suggests code-synthesized safety wrappers that could complement Genesis evaluator guardrails.
 
 ## Acknowledgments 🙏
 

@@ -1,4 +1,4 @@
-# Recent Papers on LLM-Driven Code Evolution (2024-2025)
+# Recent Papers on LLM-Driven Code Evolution (2024-2026)
 
 This page surveys the rapidly evolving field of LLM-driven code evolution, genetic programming with language models, and automated program synthesis. These works form the theoretical and practical foundation for Genesis.
 
@@ -164,6 +164,24 @@ SEIDR (Synthesize, Execute, Instruct, Debug, Rank) addresses the "near-miss synd
 - 19/25 problems solved on PSB2 with <1000 program executions
 - Outperforms both Codex-only and traditional GP approaches
 - Benefits from using multiple LLMs (introduces more variation)
+
+---
+
+### AutoHarness: Synthesizing Safety Harnesses for LLM Agents (ICLR 2026 Workshop RSI)
+
+**Paper**: [AUTOHARNESS: IMPROVING LLM AGENTS BY AUTOMATICALLY SYNTHESIZING A CODE HARNESS](https://openreview.net/forum?id=g9rEYVNn5T) (OpenReview, published March 5, 2026)
+
+AutoHarness focuses on agent reliability by evolving/synthesizing executable code harnesses around LLM agents, then iteratively refining those harnesses from environment feedback.
+
+**Why it matters for Genesis**:
+
+- Reinforces a "code-as-policy" pattern where generated code can replace runtime LLM decisions in constrained environments.
+- Provides a concrete strategy for hard safety constraints (e.g., illegal action prevention) that could be adapted into evaluator-side guardrails.
+- Suggests an additional optimization target beyond raw score: reliability under environment rules.
+
+**Key reported result**:
+
+- The authors report eliminating illegal moves across 145 TextArena games via synthesized harnesses, with smaller models outperforming larger baselines in their setup.
 
 ---
 

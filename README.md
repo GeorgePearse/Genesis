@@ -313,10 +313,13 @@ For detailed WebUI documentation, see the [WebUI Guide](docs/webui.md).
 ## Related Open-Source Projects 🧑‍🔧
 
 - **[Shinka AI](https://github.com/shinkadotai/shinka)**: The original implementation that Genesis is based on - a platform for LLM-driven program evolution
+- **[SkyDiscover](https://github.com/skydiscover-ai/skydiscover)**: Modular AI-driven discovery framework with 200+ benchmarks, adaptive algorithms (AdaEvolve, EvoX), quality-diversity archives, and human-in-the-loop feedback
 - [OpenEvolve](https://github.com/codelion/openevolve): An open-source implementation of AlphaEvolve
 - [LLM4AD](https://github.com/Optima-CityU/llm4ad): A Platform for Algorithm Design with Large Language Model
 - [Scale AgentEx](https://github.com/scaleapi/scale-agentex): Automated experimentation and optimization for AI agents
-- https://github.com/olivkoch/nano-trm tiny reasoning models
+- [SkyDiscover](https://github.com/BigComputer-Project/SkyThought): Program evolution framework with AdaEvolve/EvoX, quality-diversity archives, and cascade evaluation
+- [AutoHarness (OpenReview)](https://openreview.net/forum?id=g9rEYVNn5T): Agent reliability approach that auto-synthesizes code harnesses to prevent illegal environment actions
+- [nano-trm](https://github.com/olivkoch/nano-trm): Tiny reasoning models
 
 ## Acknowledgments 🙏
 
