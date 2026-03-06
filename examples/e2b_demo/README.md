@@ -146,14 +146,14 @@ cleanup_sandbox(job_id)
 
 ## Benefits of E2B Backend
 
-| Feature | Local | SLURM | E2B |
-|---------|-------|-------|-----|
-| Isolation | ❌ | ✅ | ✅ |
-| Parallel | Limited | ✅ | ✅ |
-| Setup | None | Complex | Simple |
-| Cost | Free | HPC access | Pay-per-use |
-| Cleanup | Manual | Manual | Automatic |
-| Safe for untrusted code | ❌ | ✅ | ✅ |
+| Feature | Local | E2B |
+|---------|-------|-----|
+| Isolation | ❌ | ✅ |
+| Parallel | Limited | ✅ |
+| Setup | None | Simple |
+| Cost | Free | Pay-per-use |
+| Cleanup | Manual | Automatic |
+| Safe for untrusted code | ❌ | ✅ |
 
 ## Troubleshooting
 

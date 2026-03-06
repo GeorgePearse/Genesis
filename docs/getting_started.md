@@ -19,7 +19,7 @@ Genesis enables automated exploration and improvement of scientific code by:
 
 - **Evolutionary Search**: Maintains a population of programs that evolve over generations
 - **LLM-Powered Mutations**: Uses LLMs as intelligent mutation operators to suggest code improvements
-- **Parallel Evaluation**: Supports parallel evaluation locally or on Slurm clusters
+- **Parallel Evaluation**: Supports parallel evaluation locally or in E2B cloud sandboxes
 - **Knowledge Transfer**: Maintains archives of successful solutions for cross-pollination between evolutionary islands
 - **Scientific Focus**: Optimized for tasks with verifiable correctness and performance metrics
 

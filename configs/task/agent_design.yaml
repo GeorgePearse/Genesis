@@ -4,17 +4,9 @@ evaluate_function:
   results_dir: ???
 
 distributed_job_config:
-  _target_: genesis.launch.SlurmCondaJobConfig
-  modules:
-  - "cuda/12.4"
-  - "cudnn/8.9.7"
-  - "hpcx/2.20"
+  _target_: genesis.launch.LocalJobConfig
   eval_program_path: "genesis/eval_hydra.py"
-  conda_env: "genesis"
   time: "01:00:00"
-  cpus: 16
-  gpus: 1
-  mem: "8G"
 
 evo_config:
   task_sys_msg: >
@@ -25,6 +17,6 @@ evo_config:
     You will be given a set of performance metrics for the program. Your goal is to maximize the `combined_score` of the program.
   language: "python"
   init_program_path: "examples/agent_design/initial.py"
-  job_type: "slurm_conda"
+  job_type: "local"
 
 exp_name: "genesis_agent_design"

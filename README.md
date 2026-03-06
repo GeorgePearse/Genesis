@@ -20,7 +20,7 @@
 
 The system is inspired by the [AI Scientist](https://sakana.ai/ai-scientist/), [AlphaEvolve](https://deepmind.google/discover/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/), and [Darwin Goedel Machine](https://sakana.ai/dgm/). It also draws on recent long-horizon memory work such as [ALMA](https://arxiv.org/abs/2505.20290) for persistent agent memory design. It maintains a population of programs that evolve over generations, with an ensemble of LLMs acting as intelligent mutation operators that suggest code improvements.
 
-The framework supports **parallel evaluation of candidates** locally, on a Slurm cluster, or in cloud sandboxes. It maintains an archive of successful solutions, enabling knowledge transfer between different evolutionary islands. `Genesis` is particularly well-suited for scientific tasks where there is a verifier available and the goal is to optimize performance metrics while maintaining code correctness and readability.
+The framework supports **parallel evaluation of candidates** locally or in cloud sandboxes (E2B). It maintains an archive of successful solutions, enabling knowledge transfer between different evolutionary islands. `Genesis` is particularly well-suited for scientific tasks where there is a verifier available and the goal is to optimize performance metrics while maintaining code correctness and readability.
 
 ![](docs/conceptual.png)
 
@@ -101,7 +101,7 @@ runner.run()
 | `max_parallel_jobs` | `2` | `int` | Maximum number of parallel evaluation jobs |
 | `max_patch_resamples` | `3` | `int` | Max times to resample a patch if it fails |
 | `max_patch_attempts` | `5` | `int` | Max attempts to generate a valid patch |
-| `job_type` | `"local"` | `str` | Job execution type: "local", "slurm_docker", "slurm_conda" |
+| `job_type` | `"local"` | `str` | Job execution type: "local" or "e2b" |
 | `language` | `"python"` | `str` | Programming language for evolution |
 | `llm_models` | `["azure-gpt-4.1-mini"]` | `List[str]` | List of LLM models for code generation |
 | `llm_dynamic_selection` | `None` | `Optional[Union[str, BanditBase]]` | Dynamic model selection strategy |
@@ -156,32 +156,16 @@ runner.run()
 | `time` | `None` | `Optional[str]` | Time limit for job execution |
 | `conda_env` | `None` | `Optional[str]` | Conda environment to run jobs in |
 
-**SlurmDockerJobConfig** (for SLURM with Docker):
+**E2BJobConfig** (for E2B cloud sandboxes):
 | Key | Default Value | Type | Explanation |
 |-----|---------------|------|-------------|
 | `eval_program_path` | `"evaluate.py"` | `Optional[str]` | Path to evaluation script |
 | `extra_cmd_args` | `{}` | `Dict[str, Any]` | Additional command line arguments |
-| `image` | `"ubuntu:latest"` | `str` | Docker image to use |
-| `image_tar_path` | `None` | `Optional[str]` | Path to Docker image tar file |
-| `docker_flags` | `""` | `str` | Additional Docker flags |
-| `partition` | `"gpu"` | `str` | SLURM partition to use |
-| `time` | `"01:00:00"` | `str` | Job time limit |
-| `cpus` | `1` | `int` | Number of CPUs to request |
-| `gpus` | `1` | `int` | Number of GPUs to request |
-| `mem` | `"8G"` | `Optional[str]` | Memory to request |
-
-**SlurmCondaJobConfig** (for SLURM with Conda):
-| Key | Default Value | Type | Explanation |
-|-----|---------------|------|-------------|
-| `eval_program_path` | `"evaluate.py"` | `Optional[str]` | Path to evaluation script |
-| `extra_cmd_args` | `{}` | `Dict[str, Any]` | Additional command line arguments |
-| `conda_env` | `""` | `str` | Conda environment name |
-| `modules` | `[]` | `Optional[List[str]]` | Environment modules to load |
-| `partition` | `"gpu"` | `str` | SLURM partition to use |
-| `time` | `"01:00:00"` | `str` | Job time limit |
-| `cpus` | `1` | `int` | Number of CPUs to request |
-| `gpus` | `1` | `int` | Number of GPUs to request |
-| `mem` | `"8G"` | `Optional[str]` | Memory to request |
+| `template` | `"base"` | `str` | E2B sandbox template |
+| `timeout` | `300` | `int` | Sandbox timeout in seconds |
+| `dependencies` | `[]` | `Optional[List[str]]` | Pip packages to install |
+| `additional_files` | `{}` | `Optional[Dict[str, str]]` | Files to upload (sandbox_path -> local_path) |
+| `env_vars` | `{}` | `Optional[Dict[str, str]]` | Environment variables to set |
 
 </details>
 

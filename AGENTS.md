@@ -67,13 +67,13 @@ Understanding the layout is crucial for navigation.
 |-----------|---------|
 | **`genesis/`** | **Core Source Code**. All Python logic lives here. |
 | `genesis/core/` | Main evolution loop (`runner.py`), LLM interaction (`llm.py`), and evaluation logic. |
-| `genesis/launch/` | Job scheduling backends (`local.py`, `slurm.py`, `e2b.py`). |
+| `genesis/launch/` | Job scheduling backends (`local.py`, `e2b.py`). |
 | `genesis/database/` | SQLite/Pickle storage for results and archives. |
 | `genesis/webui/` | Backend API for the visualization dashboard. |
 | **`configs/`** | **Hydra Configuration**. YAML files for experiments. |
 | `configs/task/` | Task definitions (what to solve). |
 | `configs/evolution/` | Evolution parameters (generations, population size). |
-| `configs/cluster/` | Execution environment settings (Local, Slurm, E2B). |
+| `configs/cluster/` | Execution environment settings (Local, E2B). |
 | **`examples/`** | **Task Implementations**. Start here to add new problems. |
 | **`tests/`** | **Unit & Integration Tests**. Mirrors `genesis/` structure. |
 | **`docs/`** | **Documentation**. Markdown files for MkDocs. |

@@ -80,7 +80,7 @@ CREATE TABLE evolution_runs (
     status String,              -- "running" | "completed" | "failed"
     total_generations Int32,    -- Number of generations completed
     population_size Int32,      -- Population size per generation
-    cluster_type String,        -- "local" | "slurm" | "e2b"
+    cluster_type String,        -- "local" | "e2b"
     database_path String        -- Path to SQLite results database
 ) ENGINE = MergeTree()
 ORDER BY start_time;

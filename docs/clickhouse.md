@@ -153,7 +153,7 @@ These tables capture the evolutionary process: runs, generations, individuals, a
 | `status` | String | Current status: "running", "completed", "failed" |
 | `total_generations` | Int32 | Total number of generations completed (0 until run finishes) |
 | `population_size` | Int32 | Population size per generation (from config) |
-| `cluster_type` | String | Execution environment: "local", "slurm", "e2b" |
+| `cluster_type` | String | Execution environment: "local" or "e2b" |
 | `database_path` | String | Path to the SQLite database file storing results |
 
 **Example Row:**

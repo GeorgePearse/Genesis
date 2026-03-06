@@ -91,22 +91,6 @@ job_config:
   eval_program_path: "genesis/evaluate.py"
 ```
 
-#### Slurm Cluster Execution
-```yaml
-job_config:
-  _target_: genesis.launch.SlurmCondaJobConfig
-  modules:                         # Environment modules
-    - "cuda/12.4"
-    - "cudnn/8.9.7"
-    - "hpcx/2.20"
-  eval_program_path: "genesis/utils/eval_hydra.py"
-  conda_env: "genesis"              # Conda environment name
-  time: "01:00:00"                 # Maximum job runtime
-  cpus: 4                          # CPU cores per job
-  gpus: 1                          # GPUs per job
-  mem: "16G"                       # Memory per job
-```
-
 ### 4. Task Config
 
 Defines problem-specific settings and evaluation functions:
@@ -120,7 +104,7 @@ evaluate_function:
 
 # Job configuration for this task
 distributed_job_config:
-  _target_: genesis.launch.SlurmCondaJobConfig
+  _target_: genesis.launch.LocalJobConfig
   # ... resource requirements ...
 
 # Evolution settings specific to this task
@@ -130,7 +114,7 @@ evo_config:
     Key insights: [domain knowledge]
   language: "python"
   init_program_path: "examples/my_task/initial.py"
-  job_type: "slurm_conda"
+  job_type: "local"
 
 exp_name: "genesis_my_task"
 ```
@@ -170,12 +154,8 @@ exp_name: "genesis_my_task"
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `time` | str | `"01:00:00"` | Maximum job runtime (HH:MM:SS) |
-| `cpus` | int | 4 | CPU cores per job |
-| `gpus` | int | 0 | GPUs per job |
-| `mem` | str | `"8G"` | Memory per job |
-| `conda_env` | str | `"genesis"` | Conda environment name |
-| `modules` | list | `[]` | Environment modules to load |
+| `time` | str | `None` | Maximum job runtime (HH:MM:SS) |
+| `conda_env` | str | `None` | Conda environment for local jobs |
 
 ## Pre-configured Variants
 
@@ -220,7 +200,7 @@ configs/
 ├── cluster/              # Execution environments
 │   ├── local.yaml        # Local execution
 │   ├── gcp.yaml          # Google Cloud Platform
-│   └── remote.yaml       # Remote Slurm clusters
+│   └── e2b.yaml          # E2B cloud sandboxes
 ├── database/             # Evolution database settings
 │   ├── island_small.yaml # Small-scale evolution (2 islands)
 │   ├── island_medium.yaml# Medium-scale evolution (4 islands)
