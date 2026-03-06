@@ -187,9 +187,10 @@ impl Hnsw {
         level: usize,
         data: &[Vec<f32>],
     ) -> BinaryHeap<Candidate> {
-        let mut visited = HashSet::new();
-        let d_ep = euclidean_distance(&data[query_idx], &data[entry_point]);
-        visited.insert(entry_point);
+        let query = &data[query_idx];
+        let mut visited = vec![false; self.nodes.len()];
+        let d_ep = euclidean_distance(query, &data[entry_point]);
+        visited[entry_point] = true;
 
         // Candidates to explore (min-heap by distance)
         let mut c_heap = BinaryHeap::new();
@@ -200,10 +201,9 @@ impl Hnsw {
         w_heap.push(MaxDistCandidate(Candidate { index: entry_point, distance: d_ep }));
 
         while let Some(c) = c_heap.pop() {
-            let f = w_heap.peek().unwrap();
-
-            // Stop if closest candidate is worse than worst result
-            if c.distance > f.0.distance {
+            // Stop only once heap is full and candidate is already worse than worst.
+            let worst_dist = w_heap.peek().map(|f| f.0.distance).unwrap_or(f32::INFINITY);
+            if w_heap.len() >= ef && c.distance > worst_dist {
                 break;
             }
 
@@ -212,22 +212,28 @@ impl Hnsw {
 
             // Explore neighbors
             for &neighbor_idx in &c_node.links[level] {
-                if !visited.contains(&neighbor_idx) {
-                    visited.insert(neighbor_idx);
+                if visited[neighbor_idx] {
+                    continue;
+                }
+                visited[neighbor_idx] = true;
 
-                    let d = euclidean_distance(&data[query_idx], &data[neighbor_idx]);
-                    let f_curr = w_heap.peek().unwrap();
+                let d = euclidean_distance(query, &data[neighbor_idx]);
+                if w_heap.len() < ef {
+                    let cand = Candidate { index: neighbor_idx, distance: d };
+                    c_heap.push(cand);
+                    w_heap.push(MaxDistCandidate(cand));
+                    continue;
+                }
 
-                    // Add if better than worst or we have room
-                    if d < f_curr.0.distance || w_heap.len() < ef {
-                        let cand = Candidate { index: neighbor_idx, distance: d };
-                        c_heap.push(cand);
-                        w_heap.push(MaxDistCandidate(cand));
+                let f_curr = w_heap.peek().unwrap();
+                if d < f_curr.0.distance {
+                    let cand = Candidate { index: neighbor_idx, distance: d };
+                    c_heap.push(cand);
+                    w_heap.push(MaxDistCandidate(cand));
 
-                        // Maintain ef size
-                        if w_heap.len() > ef {
-                            w_heap.pop();
-                        }
+                    // Maintain ef size
+                    if w_heap.len() > ef {
+                        w_heap.pop();
                     }
                 }
             }
