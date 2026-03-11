@@ -17,7 +17,8 @@ from dotenv import load_dotenv
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 import clickhouse_connect
 import uvicorn
 
@@ -48,6 +49,7 @@ app.add_middleware(
 
 # ClickHouse client (will be initialized on startup)
 ch_client = None
+FRONTEND_DIST_DIR = Path(__file__).parent / "frontend" / "dist"
 RUN_ID_RE = re.compile(r"^[A-Za-z0-9._:-]+$")
 PROGRAM_ID_RE = re.compile(r"^[A-Za-z0-9-]+$")
 TASK_RE = re.compile(r"^[A-Za-z0-9_.:-]+$")
@@ -123,12 +125,27 @@ async def startup_event():
 
 @app.get("/")
 async def root():
-    """Health check endpoint."""
+    """Serve the built frontend when available, otherwise return service health."""
+    if FRONTEND_DIST_DIR.exists():
+        return FileResponse(FRONTEND_DIST_DIR / "index.html")
     return {
         "service": "Genesis WebUI API",
         "status": "running",
         "clickhouse": "connected" if ch_client else "disconnected",
     }
+
+
+if FRONTEND_DIST_DIR.exists():
+    assets_dir = FRONTEND_DIST_DIR / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="frontend-assets")
+
+    favicon_path = FRONTEND_DIST_DIR / "favicon.ico"
+    if favicon_path.exists():
+
+        @app.get("/favicon.ico", include_in_schema=False)
+        async def favicon():
+            return FileResponse(favicon_path)
 
 
 @app.get("/api/experiments")
@@ -693,6 +710,22 @@ async def database_info():
     except Exception as e:
         logger.error(f"Error fetching database info: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+async def frontend_fallback(full_path: str):
+    """Serve SPA routes from the bundled frontend build."""
+    if not FRONTEND_DIST_DIR.exists():
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    if full_path.startswith(("api/", "docs", "openapi.json")):
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    candidate = FRONTEND_DIST_DIR / full_path
+    if full_path and candidate.is_file():
+        return FileResponse(candidate)
+
+    return FileResponse(FRONTEND_DIST_DIR / "index.html")
 
 
 def main():

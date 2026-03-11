@@ -1,0 +1,44 @@
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    restart: unless-stopped
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: ghcr.io/georgepearse/genesis:latest
+    restart: unless-stopped
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    ports:
+      - "${GENESIS_WEBUI_PORT:-8000}:8000"
+    environment:
+      GENESIS_DATA_DIR: /app/data
+      GENESIS_RESULTS_DIR: /app/results
+      PYTHONUNBUFFERED: 1
+      GENESIS_WEBUI_PORT: 8000
+      CLICKHOUSE_URL: http://default:@clickhouse:8123/default
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 8123
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      E2B_API_KEY: ${E2B_API_KEY:-}
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+
+volumes:
+  clickhouse_data:
