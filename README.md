@@ -298,16 +298,58 @@ npm run dev
 
 For detailed WebUI documentation, see the [WebUI Guide](docs/webui.md).
 
+### Hosted Auth and Payments Plan
+
+The current WebUI is primarily structured as a local developer tool. The React frontend talks to a local API, and the existing Node/Express server scans local result databases from disk. That is convenient for local experimentation, but it is not the right public-facing shape for multi-user authentication or billing.
+
+If Genesis is being turned into a hosted product, the simplest implementation path is:
+
+1. Use **Clerk** for user authentication and enable **Google sign-in** through Clerk rather than building OAuth directly.
+2. Use **Stripe Checkout** for subscription purchases and the **Stripe Billing Portal** for self-serve subscription management.
+3. Keep auth and billing in the existing `genesis/webui/frontend/server/index.ts` Express layer.
+4. Keep the Python backend focused on experiment and analytics APIs, ideally behind the authenticated Node layer.
+5. Add a small hosted database table to map `clerk_user_id` to `stripe_customer_id`, subscription status, and any internal workspace or organization identifiers.
+
+Recommended hosted architecture:
+
+- **Frontend**: Vite/React app with Clerk React SDK for sign-in state and gated routes.
+- **Node server**: Express middleware that verifies Clerk sessions, creates Stripe Checkout sessions, exposes the Stripe Billing Portal, and handles Stripe webhooks.
+- **Database**: Postgres, Supabase, or Neon for user, customer, and subscription records.
+- **Python API**: Internal data service for experiments, results, and analytics. Do not expose raw filesystem-backed database reads directly to the public internet.
+
+Recommended user flow:
+
+1. A user clicks "Continue with Google".
+2. Clerk handles the Google OAuth flow and returns an authenticated session.
+3. If the user does not have an active subscription, the app redirects them to Stripe Checkout.
+4. Stripe sends subscription events to a webhook on the Node server.
+5. The webhook updates the subscription state in the hosted database.
+6. Protected API routes allow access only when the user has both a valid Clerk session and an active Stripe subscription.
+
+Why this is the simplest path:
+
+- Clerk removes the need to implement OAuth, session storage, password reset flows, and account recovery.
+- Stripe Checkout is much simpler and safer than building custom card collection.
+- The existing Express server is already the most natural place to add auth middleware and billing endpoints.
+- Keeping billing and identity out of the Python analytics layer reduces coupling and operational risk.
+
+Important implementation note:
+
+The current local WebUI accepts client-supplied database paths and reads result files directly from disk. That is acceptable for local use, but before enabling hosted sign-in and payments, Genesis should move to a proper multi-user server model where the public API is permissioned and data access is scoped to the authenticated user or workspace.
+
 ## Related Open-Source Projects 🧑‍🔧
 
 - **[Shinka AI](https://github.com/shinkadotai/shinka)**: The original implementation that Genesis is based on - a platform for LLM-driven program evolution
 - **[SkyDiscover](https://github.com/skydiscover-ai/skydiscover)**: Modular AI-driven discovery framework with 200+ benchmarks, adaptive algorithms (AdaEvolve, EvoX), quality-diversity archives, and human-in-the-loop feedback
 - [OpenEvolve](https://github.com/codelion/openevolve): An open-source implementation of AlphaEvolve
+- [ATLAS](https://github.com/itigges22/ATLAS): A related open-source agentic research and experimentation platform
 - [LLM4AD](https://github.com/Optima-CityU/llm4ad): A Platform for Algorithm Design with Large Language Model
 - [Scale AgentEx](https://github.com/scaleapi/scale-agentex): Automated experimentation and optimization for AI agents
 - [SkyDiscover](https://github.com/BigComputer-Project/SkyThought): Program evolution framework with AdaEvolve/EvoX, quality-diversity archives, and cascade evaluation
 - [AutoHarness (OpenReview)](https://openreview.net/forum?id=g9rEYVNn5T): Agent reliability approach that auto-synthesizes code harnesses to prevent illegal environment actions
 - [nano-trm](https://github.com/olivkoch/nano-trm): Tiny reasoning models
+- [ADAS](https://www.shengranhu.com/ADAS/): Automated Design of Agentic Systems
+- [ALMA-memory](https://github.com/RBKunnela/ALMA-memory)
 
 ### Potentially Relevant Repos from Dicklesworthstone
 
