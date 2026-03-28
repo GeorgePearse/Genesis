@@ -280,6 +280,7 @@ For detailed WebUI documentation, see the [WebUI Guide](webui.md).
 - [LLM4AD](https://github.com/Optima-CityU/llm4ad): A Platform for Algorithm Design with Large Language Model
 - [Scale AgentEx](https://github.com/scaleapi/scale-agentex): Automated experimentation and optimization for AI agents
 - [SkyDiscover](https://github.com/BigComputer-Project/SkyThought): Research system with advanced algorithmic scheduling, archive, and evaluation strategies
+- [py-turboquant](https://github.com/RyanCodrai/py-turboquant): Python implementation of TurboQuant for vector search
 
 ### Potentially Relevant Repos from Dicklesworthstone
 

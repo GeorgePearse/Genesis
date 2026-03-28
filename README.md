@@ -350,6 +350,7 @@ The current local WebUI accepts client-supplied database paths and reads result 
 - [nano-trm](https://github.com/olivkoch/nano-trm): Tiny reasoning models
 - [ADAS](https://www.shengranhu.com/ADAS/): Automated Design of Agentic Systems
 - [ALMA-memory](https://github.com/RBKunnela/ALMA-memory)
+- [py-turboquant](https://github.com/RyanCodrai/py-turboquant): Python implementation of TurboQuant for vector search
 
 ### Potentially Relevant Repos from Dicklesworthstone
 
