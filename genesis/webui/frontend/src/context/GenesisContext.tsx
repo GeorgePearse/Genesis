@@ -183,7 +183,7 @@ export function GenesisProvider({ children }: { children: ReactNode }) {
 
   const stats = computeStats(state.programs);
 
-  const loadDatabases = useCallback(async (force = false) => {
+  const loadDatabases = useCallback(async (_force = false) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'SET_ERROR', payload: null });
 

@@ -6,6 +6,9 @@ import { fileURLToPath } from 'url';
 import { glob } from 'glob';
 import Database from 'better-sqlite3';
 import { marked } from 'marked';
+import { clerkMiddleware, requireAuth, getAuth } from '@clerk/express';
+import { billingRouter, webhookRouter } from './billing.js';
+import { ensureUser, getSubscription } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,13 +25,49 @@ const cache = new Map<string, { data: unknown; timestamp: number }>();
 const CACHE_TTL = 5000;
 
 app.use(cors());
+
+// Stripe webhooks need raw body -- mount before express.json()
+app.use('/api/webhooks', webhookRouter);
+
 app.use(express.json());
+
+// Clerk session verification on all routes
+app.use(clerkMiddleware());
 
 // Logging middleware
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
+
+// Billing routes (auth required but no subscription check)
+app.use('/api/billing', billingRouter);
+
+// Subscription gate middleware for all data routes below
+const requireSubscription: express.RequestHandler = async (req, res, next) => {
+  try {
+    const { userId } = getAuth(req);
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const user = await ensureUser(userId);
+    const subscription = await getSubscription(user.id);
+
+    if (subscription?.status !== 'active') {
+      return res.status(403).json({ error: 'Active subscription required' });
+    }
+
+    next();
+  } catch (error) {
+    console.error('[AUTH] Subscription check failed:', error);
+    res.status(500).json({ error: 'Authorization check failed' });
+  }
+};
+
+// All data routes require auth + active subscription
+app.use(requireAuth());
+app.use(requireSubscription);
 
 // Types
 interface DatabaseInfo {
