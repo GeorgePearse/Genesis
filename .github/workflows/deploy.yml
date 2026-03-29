@@ -1,6 +1,7 @@
 name: Deploy
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
@@ -11,9 +12,9 @@ on:
       - '.github/workflows/deploy.yml'
 
 env:
-  PROJECT_ID: openloop-491716
+  PROJECT_ID: visdet-482415
   REGION: europe-west2
-  REGISTRY: europe-west2-docker.pkg.dev/openloop-491716/genesis
+  REGISTRY: europe-west2-docker.pkg.dev/visdet-482415/genesis
   SERVICE_NAME: genesis-backend
 
 jobs:
