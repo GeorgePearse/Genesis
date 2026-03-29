@@ -88,13 +88,18 @@ jobs:
 
       - name: Verify full_ddl.sql is in sync
         run: |
+          # Normalize function: strip version comments and other pg_dump metadata
+          normalize() {
+            sed '/^-- Dumped from database version/d; /^-- Dumped by pg_dump version/d; /^\\restrict/d; /^\\unrestrict/d; /^SELECT pg_catalog/d; /^SET default_table_access_method/d' "$1"
+          }
           PGPASSWORD=genesis_test pg_dump \
             -h localhost -p 5432 -U genesis -d genesis_test \
             --schema-only --no-owner --no-privileges \
             --exclude-table='databasechangelog*' \
-            | sed '/^\\restrict/d; /^\\unrestrict/d; /^SELECT pg_catalog/d; /^SET default_table_access_method/d' \
             > /tmp/full_ddl_generated.sql
-          diff -u migrations/full_ddl.sql /tmp/full_ddl_generated.sql || \
+          normalize migrations/full_ddl.sql > /tmp/full_ddl_repo.sql
+          normalize /tmp/full_ddl_generated.sql > /tmp/full_ddl_ci.sql
+          diff -u /tmp/full_ddl_repo.sql /tmp/full_ddl_ci.sql || \
             (echo "ERROR: migrations/full_ddl.sql is out of sync. Run scripts/export_ddl.sh and commit the result." && exit 1)
 
   terraform-plan:
