@@ -1,41 +1,15 @@
-# Backend Dockerfile for Genesis Evolution Platform
-FROM python:3.12-slim
+# Root Dockerfile - builds the Rust backend
+# For local Python development, use: uv pip install -e ".[dev]"
 
-# Set working directory
+FROM rust:1.83-bookworm AS builder
 WORKDIR /app
+COPY genesis_rust_backend/Cargo.toml genesis_rust_backend/Cargo.lock ./
+RUN mkdir src && echo "fn main() {}" > src/main.rs && cargo build --release && rm -rf src
+COPY genesis_rust_backend/src ./src
+RUN touch src/main.rs && cargo build --release
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
-    git \
-    postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy dependency files
-COPY pyproject.toml ./
-COPY README.md ./
-
-# Copy application code
-COPY genesis/ ./genesis/
-COPY configs/ ./configs/
-COPY examples/ ./examples/
-COPY tests/ ./tests/
-
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -e .
-
-# Create directory for results and database
-RUN mkdir -p /app/results /app/data
-
-# Expose port for any potential API/web service
-EXPOSE 8000
-
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV GENESIS_DATA_DIR=/app/data
-ENV GENESIS_RESULTS_DIR=/app/results
-
-# Default command (can be overridden in docker-compose)
-CMD ["python", "-m", "genesis.launch_hydra"]
+FROM gcr.io/distroless/cc-debian12
+COPY --from=builder /app/target/release/genesis_rust_backend /genesis_rust_backend
+ENV PORT=8080
+EXPOSE 8080
+ENTRYPOINT ["/genesis_rust_backend"]

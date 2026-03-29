@@ -7,4 +7,5 @@ pub mod types;
 
 pub use config::EvolutionConfig;
 pub use core::runner::EvolutionRunner;
+pub use database::PgProgramDatabase;
 pub use types::{Program, RunningJob};

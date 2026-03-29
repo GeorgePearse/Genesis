@@ -5,7 +5,9 @@ pub struct NoveltyJudge {
 
 impl NoveltyJudge {
     pub fn new(similarity_threshold: f64) -> Self {
-        Self { similarity_threshold }
+        Self {
+            similarity_threshold,
+        }
     }
 
     pub fn should_accept(&self, similarity: f64) -> bool {

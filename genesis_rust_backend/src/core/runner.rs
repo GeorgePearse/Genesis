@@ -1,6 +1,7 @@
 use anyhow::Result;
 use chrono::Utc;
 use std::collections::HashMap;
+use uuid::Uuid;
 
 use crate::config::EvolutionConfig;
 use crate::core::alma_memory::AlmaMemorySystem;
@@ -8,21 +9,23 @@ use crate::core::gepa_optimizer::GepaStyleOptimizer;
 use crate::core::novelty_judge::NoveltyJudge;
 use crate::core::sampler::PromptSampler;
 use crate::core::summarizer::MetaSummarizer;
-use crate::database::{build_database, ProgramDatabase};
+use crate::database::PgProgramDatabase;
 use crate::launch::{build_scheduler, JobScheduler};
-use crate::llm::{build_llm_client, LlmClient};
+use crate::llm::{build_llm_client, LlmClientDyn};
 use crate::types::{PatchRequest, Program};
 
 pub struct EvolutionRunner {
     pub cfg: EvolutionConfig,
-    pub db: Box<dyn ProgramDatabase>,
-    pub llm: Box<dyn LlmClient>,
+    pub db: Option<PgProgramDatabase>,
+    pub llm: Box<dyn LlmClientDyn>,
     pub scheduler: Box<dyn JobScheduler>,
     pub prompt_sampler: PromptSampler,
     pub meta_summarizer: MetaSummarizer,
     pub novelty_judge: NoveltyJudge,
     pub alma_memory: AlmaMemorySystem,
     pub gepa_optimizer: GepaStyleOptimizer,
+    pub run_id: Option<Uuid>,
+    programs: Vec<Program>,
 }
 
 impl EvolutionRunner {
@@ -35,11 +38,12 @@ impl EvolutionRunner {
             cfg.use_text_feedback,
         );
 
-        let db = build_database(&cfg).unwrap_or_else(|_| build_database(&EvolutionConfig::default()).expect("default db"));
-        let llm = build_llm_client(&cfg).unwrap_or_else(|_| build_llm_client(&EvolutionConfig::default()).expect("default llm"));
+        let llm = build_llm_client(&cfg).unwrap_or_else(|_| {
+            build_llm_client(&EvolutionConfig::default()).expect("default llm")
+        });
         let scheduler = build_scheduler(&cfg);
 
-        let mut runner = Self {
+        Self {
             novelty_judge: NoveltyJudge::new(1.0),
             alma_memory: AlmaMemorySystem::new(
                 cfg.alma_enabled,
@@ -56,41 +60,66 @@ impl EvolutionRunner {
                 cfg.gepa_candidate_instructions.clone(),
             ),
             cfg,
-            db,
+            db: None,
             llm,
             scheduler,
             prompt_sampler,
             meta_summarizer: MetaSummarizer::default(),
-        };
-
-        runner.restore_state();
-        runner
+            run_id: None,
+            programs: Vec::new(),
+        }
     }
 
-    pub fn run(&mut self) -> Result<()> {
-        self.run_generation_0()?;
+    pub async fn init_db(&mut self) -> Result<()> {
+        if let Some(url) = &self.cfg.database_url {
+            let db = PgProgramDatabase::new(url).await?;
+            self.db = Some(db);
+        }
+        Ok(())
+    }
+
+    pub async fn run(&mut self) -> Result<()> {
+        if let Some(db) = &self.db {
+            let run_id = db
+                .create_evolution_run(
+                    self.cfg.task_sys_msg.as_deref().unwrap_or("unknown"),
+                    &serde_json::json!({}),
+                    self.cfg.num_generations as i32,
+                    None,
+                    None,
+                )
+                .await?;
+            self.run_id = Some(run_id);
+        }
+
+        self.run_generation_0().await?;
 
         for generation in 1..self.cfg.num_generations {
-            self.run_generation(generation)?;
+            self.run_generation(generation).await?;
+        }
+
+        if let (Some(db), Some(run_id)) = (&self.db, self.run_id) {
+            db.update_evolution_run_status(run_id, "completed", self.cfg.num_generations as i32)
+                .await?;
         }
 
         self.save_state()?;
-        if let Some(best) = self.db.get_best_program()? {
+        if let Some(best) = self.get_best_program() {
             println!(
-                "[rust-backend] best program gen={} score={:.4}",
+                "[genesis] best program gen={} score={:.4}",
                 best.generation, best.combined_score
             );
         }
         Ok(())
     }
 
-    fn run_generation_0(&mut self) -> Result<()> {
+    async fn run_generation_0(&mut self) -> Result<()> {
         let (sys, user) = self.prompt_sampler.initial_program_prompt();
-        let resp = self.llm.query(&user, &sys)?;
+        let resp = self.llm.query_dyn(&user, &sys).await?;
         let eval = self.scheduler.run(&resp.content, 0)?;
 
         let program = Program {
-            id: uuid(0),
+            id: Uuid::new_v4(),
             code: resp.content,
             language: self.cfg.language.clone(),
             parent_id: None,
@@ -104,15 +133,37 @@ impl EvolutionRunner {
             timestamp: Utc::now(),
         };
 
-        self.db.add(program.clone())?;
-        self.meta_summarizer.add_evaluated_program(program);
+        if let (Some(db), Some(run_id)) = (&self.db, self.run_id) {
+            db.add_individual(
+                run_id,
+                program.id,
+                program.generation,
+                program.parent_id,
+                "init",
+                program.combined_score,
+                program.combined_score,
+                &serde_json::json!({}),
+                false,
+                0.0,
+                0.0,
+                0.0,
+                "",
+                program.code.len() as i32,
+                &program.code,
+                &program.language,
+                &program.text_feedback,
+            )
+            .await?;
+        }
+
+        self.meta_summarizer.add_evaluated_program(program.clone());
+        self.programs.push(program);
         Ok(())
     }
 
-    fn run_generation(&mut self, generation: usize) -> Result<()> {
-        let (parent, archive, top_k) = self
-            .db
-            .sample(generation)?
+    async fn run_generation(&mut self, generation: usize) -> Result<()> {
+        let parent = self
+            .get_best_program()
             .ok_or_else(|| anyhow::anyhow!("no parent available for generation {generation}"))?;
 
         let meta_recommendations = if self
@@ -124,15 +175,26 @@ impl EvolutionRunner {
             self.meta_summarizer.get_current()
         };
 
-        let alma_context = self
-            .alma_memory
-            .build_prompt_context(generation, &parent.code, &parent.text_feedback);
+        let alma_context =
+            self.alma_memory
+                .build_prompt_context(generation, &parent.code, &parent.text_feedback);
         let gepa_ctx = self.gepa_optimizer.build_prompt_context();
+
+        let top_k: Vec<Program> = {
+            let mut sorted = self.programs.clone();
+            sorted.sort_by(|a, b| b.combined_score.total_cmp(&a.combined_score));
+            sorted
+                .into_iter()
+                .take(6)
+                .filter(|p| p.id != parent.id)
+                .collect()
+        };
+        let archive = top_k.iter().take(4).cloned().collect();
 
         let req = PatchRequest {
             parent: parent.clone(),
             archive_inspirations: archive,
-            top_k_inspirations: top_k,
+            top_k_inspirations: top_k.into_iter().take(2).collect(),
             meta_recommendations,
             alma_memory_context: alma_context,
             gepa_instruction: gepa_ctx.candidate_instruction.clone(),
@@ -140,7 +202,7 @@ impl EvolutionRunner {
         };
 
         let (patch_sys, patch_msg, patch_type) = self.prompt_sampler.sample(&req);
-        let resp = self.llm.query(&patch_msg, &patch_sys)?;
+        let resp = self.llm.query_dyn(&patch_msg, &patch_sys).await?;
         let eval = self.scheduler.run(&resp.content, generation)?;
 
         if !self.novelty_judge.should_accept(0.0) {
@@ -160,11 +222,11 @@ impl EvolutionRunner {
         }
 
         let program = Program {
-            id: uuid(generation),
+            id: Uuid::new_v4(),
             code: resp.content,
             language: self.cfg.language.clone(),
-            parent_id: Some(parent.id.clone()),
-            generation,
+            parent_id: Some(parent.id),
+            generation: generation as i32,
             combined_score: eval.combined_score,
             correct: eval.correct,
             public_metrics: HashMap::new(),
@@ -174,7 +236,41 @@ impl EvolutionRunner {
             timestamp: Utc::now(),
         };
 
-        self.db.add(program.clone())?;
+        if let (Some(db), Some(run_id)) = (&self.db, self.run_id) {
+            db.add_individual(
+                run_id,
+                program.id,
+                program.generation,
+                program.parent_id,
+                &patch_type,
+                program.combined_score,
+                program.combined_score,
+                &serde_json::json!({}),
+                false,
+                0.0,
+                0.0,
+                0.0,
+                "",
+                program.code.len() as i32,
+                &program.code,
+                &program.language,
+                &program.text_feedback,
+            )
+            .await?;
+
+            let delta = program.combined_score - parent.combined_score;
+            db.log_lineage(
+                run_id,
+                program.id,
+                Some(parent.id),
+                program.generation,
+                &patch_type,
+                delta,
+                "",
+            )
+            .await?;
+        }
+
         self.meta_summarizer.add_evaluated_program(program.clone());
 
         let delta = program.combined_score - parent.combined_score;
@@ -183,8 +279,8 @@ impl EvolutionRunner {
             parent.combined_score,
             program.combined_score,
             &patch_type,
-            "rust-backend-patch",
-            "Rust backend generated mutation",
+            "genesis-patch",
+            "Generated mutation",
             "diff summary unavailable",
             gepa_ctx.candidate_id,
             program.correct,
@@ -195,20 +291,30 @@ impl EvolutionRunner {
             program.combined_score,
             program.correct,
             &patch_type,
-            "rust-backend-patch",
-            "Rust backend generated mutation",
+            "genesis-patch",
+            "Generated mutation",
             "diff summary unavailable",
             &program.text_feedback,
             "",
         );
 
         println!(
-            "[rust-backend] gen={} parent={:.4} child={:.4} delta={:+.4}",
+            "[genesis] gen={} parent={:.4} child={:.4} delta={:+.4}",
             generation, parent.combined_score, program.combined_score, delta
         );
 
+        self.programs.push(program);
         self.save_state()?;
         Ok(())
+    }
+
+    fn get_best_program(&self) -> Option<Program> {
+        self.programs
+            .iter()
+            .filter(|p| p.correct)
+            .max_by(|a, b| a.combined_score.total_cmp(&b.combined_score))
+            .cloned()
+            .or_else(|| self.programs.last().cloned())
     }
 
     fn save_state(&self) -> Result<()> {
@@ -217,16 +323,8 @@ impl EvolutionRunner {
         Ok(())
     }
 
-    fn restore_state(&mut self) {
+    pub fn restore_state(&mut self) {
         let _ = self.alma_memory.load_state("alma_memory.json");
         let _ = self.gepa_optimizer.load_state("gepa_state.json");
     }
-}
-
-fn uuid(generation: usize) -> String {
-    format!(
-        "rust-gen-{}-{}",
-        generation,
-        Utc::now().timestamp_nanos_opt().unwrap_or_default()
-    )
 }

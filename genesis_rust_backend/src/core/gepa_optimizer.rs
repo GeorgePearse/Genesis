@@ -106,8 +106,8 @@ impl GepaStyleOptimizer {
             return;
         }
 
-        let instruction = candidate_id
-            .and_then(|idx| self.candidate_instructions.get(idx).cloned());
+        let instruction =
+            candidate_id.and_then(|idx| self.candidate_instructions.get(idx).cloned());
         self.traces.push(GepaTrace {
             generation,
             parent_score,
@@ -121,7 +121,8 @@ impl GepaStyleOptimizer {
             candidate_instruction: instruction,
         });
 
-        self.traces.sort_by(|a, b| b.score_delta.total_cmp(&a.score_delta));
+        self.traces
+            .sort_by(|a, b| b.score_delta.total_cmp(&a.score_delta));
         if self.traces.len() > self.max_traces {
             self.traces.truncate(self.max_traces);
         }
@@ -178,12 +179,7 @@ impl GepaStyleOptimizer {
             return None;
         }
         let mut lines = Vec::new();
-        for (idx, t) in self
-            .traces
-            .iter()
-            .take(self.num_fewshot_traces)
-            .enumerate()
-        {
+        for (idx, t) in self.traces.iter().take(self.num_fewshot_traces).enumerate() {
             lines.push(format!("## Successful Trace {}", idx + 1));
             lines.push(format!("- Generation: {}", t.generation));
             lines.push(format!("- Score delta: {:+.4}", t.score_delta));
