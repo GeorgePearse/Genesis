@@ -12,11 +12,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/list_databases': 'http://localhost:8000',
-      '/get_programs': 'http://localhost:8000',
-      '/get_meta_files': 'http://localhost:8000',
-      '/get_meta_content': 'http://localhost:8000',
-      '/download_meta_pdf': 'http://localhost:8000',
+      '/api': 'http://localhost:8080',
     },
   },
 });

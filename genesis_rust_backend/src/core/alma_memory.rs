@@ -24,7 +24,12 @@ pub struct AlmaMemorySystem {
 }
 
 impl AlmaMemorySystem {
-    pub fn new(enabled: bool, max_entries: usize, max_retrievals: usize, min_success_delta: f64) -> Self {
+    pub fn new(
+        enabled: bool,
+        max_entries: usize,
+        max_retrievals: usize,
+        min_success_delta: f64,
+    ) -> Self {
         Self {
             enabled,
             max_entries: max_entries.max(1),
@@ -60,12 +65,17 @@ impl AlmaMemorySystem {
         }
         .to_string();
 
-        let summary = [patch_description, diff_summary, text_feedback, error_message]
-            .iter()
-            .filter(|s| !s.is_empty())
-            .copied()
-            .collect::<Vec<_>>()
-            .join(" | ");
+        let summary = [
+            patch_description,
+            diff_summary,
+            text_feedback,
+            error_message,
+        ]
+        .iter()
+        .filter(|s| !s.is_empty())
+        .copied()
+        .collect::<Vec<_>>()
+        .join(" | ");
 
         let keywords = extract_keywords(&format!(
             "{} {} {} {} {} {}",
@@ -113,7 +123,8 @@ impl AlmaMemorySystem {
                     .iter()
                     .filter(|k| context_set.contains(*k))
                     .count() as f64;
-                let recency = 1.0 / (1.0 + current_generation.saturating_sub(entry.generation) as f64);
+                let recency =
+                    1.0 / (1.0 + current_generation.saturating_sub(entry.generation) as f64);
                 let impact = entry.score_delta.abs();
                 (2.0 * overlap + recency + impact, entry)
             })
@@ -131,8 +142,14 @@ impl AlmaMemorySystem {
         }
 
         let mut out = String::from("# ALMA Long-Term Memory\n");
-        let successes = selected.iter().filter(|e| e.memory_type == "success").collect::<Vec<_>>();
-        let failures = selected.iter().filter(|e| e.memory_type == "failure").collect::<Vec<_>>();
+        let successes = selected
+            .iter()
+            .filter(|e| e.memory_type == "success")
+            .collect::<Vec<_>>();
+        let failures = selected
+            .iter()
+            .filter(|e| e.memory_type == "failure")
+            .collect::<Vec<_>>();
 
         if !successes.is_empty() {
             out.push_str("## Reuse These Successful Patterns\n");
@@ -183,8 +200,21 @@ impl AlmaMemorySystem {
 
 fn extract_keywords(text: &str) -> Vec<String> {
     let stopwords: HashSet<&str> = [
-        "the", "and", "for", "with", "that", "this", "from", "into", "code", "patch",
-        "generation", "score", "delta", "result", "error",
+        "the",
+        "and",
+        "for",
+        "with",
+        "that",
+        "this",
+        "from",
+        "into",
+        "code",
+        "patch",
+        "generation",
+        "score",
+        "delta",
+        "result",
+        "error",
     ]
     .iter()
     .copied()

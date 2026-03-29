@@ -77,7 +77,10 @@ impl JobScheduler for LocalCommandScheduler {
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
 
         if let Ok(json) = serde_json::from_str::<serde_json::Value>(&stdout) {
-            let correct = json.get("correct").and_then(|v| v.as_bool()).unwrap_or(output.status.success());
+            let correct = json
+                .get("correct")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(output.status.success());
             let combined_score = json
                 .get("combined_score")
                 .and_then(|v| v.as_f64())

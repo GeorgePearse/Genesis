@@ -14,11 +14,7 @@ pub struct EvolutionConfig {
     pub language: String,
     pub use_text_feedback: bool,
 
-    pub db_backend: String,
-    pub clickhouse_url: Option<String>,
-    pub clickhouse_user: Option<String>,
-    pub clickhouse_password: Option<String>,
-    pub clickhouse_database: String,
+    pub database_url: Option<String>,
 
     pub llm_backend: String,
     pub openai_base_url: String,
@@ -39,6 +35,8 @@ pub struct EvolutionConfig {
     pub gepa_min_improvement: f64,
     pub gepa_exploration_weight: f64,
     pub gepa_candidate_instructions: Option<Vec<String>>,
+
+    pub server_port: u16,
 }
 
 impl Default for EvolutionConfig {
@@ -54,12 +52,7 @@ impl Default for EvolutionConfig {
             language: "python".to_string(),
             use_text_feedback: false,
 
-            db_backend: "in_memory".to_string(),
-            clickhouse_url: std::env::var("CLICKHOUSE_URL").ok(),
-            clickhouse_user: std::env::var("CLICKHOUSE_USER").ok(),
-            clickhouse_password: std::env::var("CLICKHOUSE_PASSWORD").ok(),
-            clickhouse_database: std::env::var("CLICKHOUSE_DB")
-                .unwrap_or_else(|_| "default".to_string()),
+            database_url: std::env::var("DATABASE_URL").ok(),
 
             llm_backend: "mock".to_string(),
             openai_base_url: "https://api.openai.com".to_string(),
@@ -79,6 +72,11 @@ impl Default for EvolutionConfig {
             gepa_min_improvement: 0.0,
             gepa_exploration_weight: 1.1,
             gepa_candidate_instructions: None,
+
+            server_port: std::env::var("PORT")
+                .ok()
+                .and_then(|p| p.parse().ok())
+                .unwrap_or(8080),
         }
     }
 }
@@ -108,14 +106,8 @@ impl EvolutionConfig {
         if self.openai_api_key.is_none() {
             self.openai_api_key = std::env::var("OPENAI_API_KEY").ok();
         }
-        if self.clickhouse_url.is_none() {
-            self.clickhouse_url = std::env::var("CLICKHOUSE_URL").ok();
-        }
-        if self.clickhouse_user.is_none() {
-            self.clickhouse_user = std::env::var("CLICKHOUSE_USER").ok();
-        }
-        if self.clickhouse_password.is_none() {
-            self.clickhouse_password = std::env::var("CLICKHOUSE_PASSWORD").ok();
+        if self.database_url.is_none() {
+            self.database_url = std::env::var("DATABASE_URL").ok();
         }
         self
     }

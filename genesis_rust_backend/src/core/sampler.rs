@@ -57,7 +57,11 @@ impl PromptSampler {
         let patch_type = self.sample_patch_type(&req.archive_inspirations, &req.top_k_inspirations);
 
         let mut history = String::new();
-        append_program_list(&mut history, "Archive Inspirations", &req.archive_inspirations);
+        append_program_list(
+            &mut history,
+            "Archive Inspirations",
+            &req.archive_inspirations,
+        );
         append_program_list(&mut history, "Top-K Inspirations", &req.top_k_inspirations);
 
         if let Some(alma_memory_context) = &req.alma_memory_context {

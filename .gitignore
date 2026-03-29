@@ -176,3 +176,16 @@ cython_debug/
 .pre-commit-cache/
 results/
 *.log
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+terraform/terraform.tfvars
+
+# Rust
+genesis_rust_backend/target/
+
+# SQLx offline cache (committed intentionally, but gitignore target)
+# genesis_rust_backend/.sqlx/

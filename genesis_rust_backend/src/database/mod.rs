@@ -1,264 +1,332 @@
+#![allow(clippy::too_many_arguments)]
+
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
-use reqwest::blocking::Client;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use serde_json::Value as JsonValue;
+use sqlx::postgres::PgPoolOptions;
+use sqlx::PgPool;
+use uuid::Uuid;
 
-use crate::config::EvolutionConfig;
-use crate::types::Program;
-
-pub trait ProgramDatabase {
-    fn add(&mut self, program: Program) -> Result<()>;
-    fn get(&self, id: &str) -> Result<Option<Program>>;
-    fn get_best_program(&self) -> Result<Option<Program>>;
-    fn get_top_programs(&self, n: usize) -> Result<Vec<Program>>;
-    fn sample(&self, target_generation: usize) -> Result<Option<(Program, Vec<Program>, Vec<Program>)>>;
+#[derive(Clone)]
+pub struct PgProgramDatabase {
+    pool: PgPool,
 }
 
-pub fn build_database(cfg: &EvolutionConfig) -> Result<Box<dyn ProgramDatabase>> {
-    match cfg.db_backend.as_str() {
-        "clickhouse" => Ok(Box::new(ClickHouseProgramDatabase::new(cfg)?)),
-        _ => Ok(Box::new(InMemoryProgramDatabase::new())),
+impl PgProgramDatabase {
+    pub async fn new(database_url: &str) -> Result<Self> {
+        let pool = PgPoolOptions::new()
+            .max_connections(5)
+            .connect(database_url)
+            .await
+            .with_context(|| "failed to connect to postgres")?;
+        Ok(Self { pool })
     }
-}
 
-#[derive(Debug, Default, Clone)]
-pub struct InMemoryProgramDatabase {
-    programs: Vec<Program>,
-}
-
-impl InMemoryProgramDatabase {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn from_pool(pool: PgPool) -> Self {
+        Self { pool }
     }
-}
 
-impl ProgramDatabase for InMemoryProgramDatabase {
-    fn add(&mut self, program: Program) -> Result<()> {
-        self.programs.push(program);
+    pub fn pool(&self) -> &PgPool {
+        &self.pool
+    }
+
+    // -- evolution_runs --
+
+    pub async fn create_evolution_run(
+        &self,
+        task_name: &str,
+        config: &JsonValue,
+        population_size: i32,
+        cluster_type: Option<&str>,
+        database_path: Option<&str>,
+    ) -> Result<Uuid> {
+        let row = sqlx::query_scalar::<_, Uuid>(
+            r#"INSERT INTO evolution_runs (task_name, config, population_size, cluster_type, database_path)
+               VALUES ($1, $2, $3, $4, $5)
+               RETURNING run_id"#,
+        )
+        .bind(task_name)
+        .bind(config)
+        .bind(population_size)
+        .bind(cluster_type)
+        .bind(database_path)
+        .fetch_one(&self.pool)
+        .await
+        .with_context(|| "failed to insert evolution_run")?;
+
+        Ok(row)
+    }
+
+    pub async fn update_evolution_run_status(
+        &self,
+        run_id: Uuid,
+        status: &str,
+        total_generations: i32,
+    ) -> Result<()> {
+        sqlx::query(
+            r#"UPDATE evolution_runs
+               SET status = $1, total_generations = $2, end_time = now()
+               WHERE run_id = $3"#,
+        )
+        .bind(status)
+        .bind(total_generations)
+        .bind(run_id)
+        .execute(&self.pool)
+        .await
+        .with_context(|| "failed to update evolution_run")?;
+
         Ok(())
     }
 
-    fn get(&self, id: &str) -> Result<Option<Program>> {
-        Ok(self.programs.iter().find(|p| p.id == id).cloned())
-    }
+    // -- generations --
 
-    fn get_best_program(&self) -> Result<Option<Program>> {
-        Ok(self
-            .programs
-            .iter()
-            .filter(|p| p.correct)
-            .max_by(|a, b| a.combined_score.total_cmp(&b.combined_score))
-            .cloned())
-    }
+    pub async fn log_generation(
+        &self,
+        run_id: Uuid,
+        generation: i32,
+        num_individuals: i32,
+        best_score: f64,
+        avg_score: f64,
+        pareto_size: i32,
+        total_cost: f64,
+        metadata: &JsonValue,
+    ) -> Result<()> {
+        sqlx::query(
+            r#"INSERT INTO generations (run_id, generation, num_individuals, best_score, avg_score, pareto_size, total_cost, metadata)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"#,
+        )
+        .bind(run_id)
+        .bind(generation)
+        .bind(num_individuals)
+        .bind(best_score)
+        .bind(avg_score)
+        .bind(pareto_size)
+        .bind(total_cost)
+        .bind(metadata)
+        .execute(&self.pool)
+        .await
+        .with_context(|| "failed to insert generation")?;
 
-    fn get_top_programs(&self, n: usize) -> Result<Vec<Program>> {
-        let mut ps = self.programs.clone();
-        ps.sort_by(|a, b| b.combined_score.total_cmp(&a.combined_score));
-        Ok(ps.into_iter().take(n).collect())
-    }
-
-    fn sample(&self, _target_generation: usize) -> Result<Option<(Program, Vec<Program>, Vec<Program>)>> {
-        let parent = self.get_best_program()?.or_else(|| self.programs.last().cloned());
-        let Some(parent) = parent else {
-            return Ok(None);
-        };
-        let mut inspirations = self.get_top_programs(6)?;
-        inspirations.retain(|p| p.id != parent.id);
-        let archive = inspirations.iter().take(4).cloned().collect::<Vec<_>>();
-        let top_k = inspirations.into_iter().take(2).collect::<Vec<_>>();
-        Ok(Some((parent, archive, top_k)))
-    }
-}
-
-#[derive(Debug)]
-pub struct ClickHouseProgramDatabase {
-    client: Client,
-    base_url: String,
-    user: Option<String>,
-    password: Option<String>,
-    database: String,
-}
-
-impl ClickHouseProgramDatabase {
-    pub fn new(cfg: &EvolutionConfig) -> Result<Self> {
-        let base_url = cfg
-            .clickhouse_url
-            .clone()
-            .unwrap_or_else(|| "http://localhost:8123".to_string());
-
-        let db = Self {
-            client: Client::new(),
-            base_url,
-            user: cfg.clickhouse_user.clone(),
-            password: cfg.clickhouse_password.clone(),
-            database: cfg.clickhouse_database.clone(),
-        };
-        db.init_schema()?;
-        Ok(db)
-    }
-
-    fn init_schema(&self) -> Result<()> {
-        let sql = format!(
-            "CREATE TABLE IF NOT EXISTS {}.programs (\
-                id String,\
-                code String,\
-                language String,\
-                parent_id Nullable(String),\
-                generation UInt32,\
-                combined_score Float64,\
-                correct UInt8,\
-                public_metrics String,\
-                private_metrics String,\
-                text_feedback String,\
-                metadata String,\
-                timestamp DateTime64(3)\
-            ) ENGINE = ReplacingMergeTree(timestamp) ORDER BY id",
-            self.database
-        );
-        self.exec_sql(&sql)?;
         Ok(())
     }
 
-    fn exec_sql(&self, sql: &str) -> Result<String> {
-        let url = format!("{}/", self.base_url.trim_end_matches('/'));
-        let mut req = self.client.post(url).query(&[("query", sql)]);
-        if let Some(user) = &self.user {
-            req = req.basic_auth(user, self.password.clone());
-        }
-        let resp = req
-            .send()
-            .with_context(|| "clickhouse request failed")?
-            .error_for_status()
-            .with_context(|| "clickhouse non-success response")?;
-        Ok(resp.text().unwrap_or_default())
-    }
+    // -- individuals --
 
-    fn select_rows(&self, sql: &str) -> Result<Vec<Program>> {
-        let out = self.exec_sql(sql)?;
-        let mut programs = Vec::new();
-        for line in out.lines() {
-            if line.trim().is_empty() {
-                continue;
-            }
-            let row: DbProgramRow = serde_json::from_str(line)
-                .with_context(|| "failed to parse clickhouse JSONEachRow line")?;
-            programs.push(row.try_into_program()?);
-        }
-        Ok(programs)
-    }
-}
+    pub async fn add_individual(
+        &self,
+        run_id: Uuid,
+        individual_id: Uuid,
+        generation: i32,
+        parent_id: Option<Uuid>,
+        mutation_type: &str,
+        fitness_score: f64,
+        combined_score: f64,
+        metrics: &JsonValue,
+        is_pareto: bool,
+        api_cost: f64,
+        embed_cost: f64,
+        novelty_cost: f64,
+        code_hash: &str,
+        code_size: i32,
+        code: &str,
+        language: &str,
+        text_feedback: &str,
+    ) -> Result<()> {
+        sqlx::query(
+            r#"INSERT INTO individuals
+               (run_id, individual_id, generation, parent_id, mutation_type,
+                fitness_score, combined_score, metrics, is_pareto,
+                api_cost, embed_cost, novelty_cost, code_hash, code_size,
+                code, language, text_feedback)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)"#,
+        )
+        .bind(run_id)
+        .bind(individual_id)
+        .bind(generation)
+        .bind(parent_id)
+        .bind(mutation_type)
+        .bind(fitness_score)
+        .bind(combined_score)
+        .bind(metrics)
+        .bind(is_pareto)
+        .bind(api_cost)
+        .bind(embed_cost)
+        .bind(novelty_cost)
+        .bind(code_hash)
+        .bind(code_size)
+        .bind(code)
+        .bind(language)
+        .bind(text_feedback)
+        .execute(&self.pool)
+        .await
+        .with_context(|| "failed to insert individual")?;
 
-impl ProgramDatabase for ClickHouseProgramDatabase {
-    fn add(&mut self, program: Program) -> Result<()> {
-        let row = DbProgramRow::from_program(&program)?;
-        let payload = serde_json::to_string(&row)?;
-        let sql = format!(
-            "INSERT INTO {}.programs FORMAT JSONEachRow\n{}",
-            self.database, payload
-        );
-        self.exec_sql(&sql)?;
         Ok(())
     }
 
-    fn get(&self, id: &str) -> Result<Option<Program>> {
-        let sql = format!(
-            "SELECT * FROM {}.programs WHERE id = '{}' ORDER BY timestamp DESC LIMIT 1 FORMAT JSONEachRow",
-            self.database,
-            id.replace('\'', "''")
-        );
-        Ok(self.select_rows(&sql)?.into_iter().next())
+    pub async fn get_best_individual(&self, run_id: Uuid) -> Result<Option<IndividualRow>> {
+        let row = sqlx::query_as::<_, IndividualRow>(
+            r#"SELECT run_id, individual_id, generation, timestamp, parent_id,
+                      mutation_type, fitness_score, combined_score, metrics,
+                      is_pareto, api_cost, embed_cost, novelty_cost, code_hash, code_size
+               FROM individuals
+               WHERE run_id = $1
+               ORDER BY combined_score DESC
+               LIMIT 1"#,
+        )
+        .bind(run_id)
+        .fetch_optional(&self.pool)
+        .await
+        .with_context(|| "failed to fetch best individual")?;
+
+        Ok(row)
     }
 
-    fn get_best_program(&self) -> Result<Option<Program>> {
-        let sql = format!(
-            "SELECT * FROM {}.programs WHERE correct = 1 ORDER BY combined_score DESC LIMIT 1 FORMAT JSONEachRow",
-            self.database
-        );
-        Ok(self.select_rows(&sql)?.into_iter().next())
+    pub async fn get_top_individuals(&self, run_id: Uuid, n: i64) -> Result<Vec<IndividualRow>> {
+        let rows = sqlx::query_as::<_, IndividualRow>(
+            r#"SELECT run_id, individual_id, generation, timestamp, parent_id,
+                      mutation_type, fitness_score, combined_score, metrics,
+                      is_pareto, api_cost, embed_cost, novelty_cost, code_hash, code_size
+               FROM individuals
+               WHERE run_id = $1
+               ORDER BY combined_score DESC
+               LIMIT $2"#,
+        )
+        .bind(run_id)
+        .bind(n)
+        .fetch_all(&self.pool)
+        .await
+        .with_context(|| "failed to fetch top individuals")?;
+
+        Ok(rows)
     }
 
-    fn get_top_programs(&self, n: usize) -> Result<Vec<Program>> {
-        let sql = format!(
-            "SELECT * FROM {}.programs ORDER BY combined_score DESC LIMIT {} FORMAT JSONEachRow",
-            self.database,
-            n.max(1)
-        );
-        self.select_rows(&sql)
+    // -- pareto_fronts --
+
+    pub async fn log_pareto_front(
+        &self,
+        run_id: Uuid,
+        generation: i32,
+        individual_id: Uuid,
+        fitness_score: f64,
+        combined_score: f64,
+        metrics: &JsonValue,
+    ) -> Result<()> {
+        sqlx::query(
+            r#"INSERT INTO pareto_fronts (run_id, generation, individual_id, fitness_score, combined_score, metrics)
+               VALUES ($1, $2, $3, $4, $5, $6)"#,
+        )
+        .bind(run_id)
+        .bind(generation)
+        .bind(individual_id)
+        .bind(fitness_score)
+        .bind(combined_score)
+        .bind(metrics)
+        .execute(&self.pool)
+        .await
+        .with_context(|| "failed to insert pareto_front")?;
+
+        Ok(())
     }
 
-    fn sample(&self, _target_generation: usize) -> Result<Option<(Program, Vec<Program>, Vec<Program>)>> {
-        let parent = self.get_best_program()?;
-        let Some(parent) = parent else {
-            return Ok(None);
-        };
+    // -- code_lineages --
 
-        let mut inspirations = self.get_top_programs(6)?;
-        inspirations.retain(|p| p.id != parent.id);
-        let archive = inspirations.iter().take(4).cloned().collect::<Vec<_>>();
-        let top_k = inspirations.into_iter().take(2).collect::<Vec<_>>();
-        Ok(Some((parent, archive, top_k)))
+    pub async fn log_lineage(
+        &self,
+        run_id: Uuid,
+        child_id: Uuid,
+        parent_id: Option<Uuid>,
+        generation: i32,
+        mutation_type: &str,
+        fitness_delta: f64,
+        edit_summary: &str,
+    ) -> Result<()> {
+        sqlx::query(
+            r#"INSERT INTO code_lineages (run_id, child_id, parent_id, generation, mutation_type, fitness_delta, edit_summary)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)"#,
+        )
+        .bind(run_id)
+        .bind(child_id)
+        .bind(parent_id)
+        .bind(generation)
+        .bind(mutation_type)
+        .bind(fitness_delta)
+        .bind(edit_summary)
+        .execute(&self.pool)
+        .await
+        .with_context(|| "failed to insert code_lineage")?;
+
+        Ok(())
+    }
+
+    // -- llm_logs --
+
+    pub async fn log_llm_interaction(
+        &self,
+        model: &str,
+        messages: &JsonValue,
+        response: &str,
+        thought: &str,
+        cost: f64,
+        execution_time: f64,
+        metadata: &JsonValue,
+    ) -> Result<()> {
+        sqlx::query(
+            r#"INSERT INTO llm_logs (model, messages, response, thought, cost, execution_time, metadata)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)"#,
+        )
+        .bind(model)
+        .bind(messages)
+        .bind(response)
+        .bind(thought)
+        .bind(cost)
+        .bind(execution_time)
+        .bind(metadata)
+        .execute(&self.pool)
+        .await
+        .with_context(|| "failed to insert llm_log")?;
+
+        Ok(())
+    }
+
+    // -- agent_actions --
+
+    pub async fn log_agent_action(
+        &self,
+        action_type: &str,
+        details: &JsonValue,
+        metadata: &JsonValue,
+    ) -> Result<()> {
+        sqlx::query(
+            r#"INSERT INTO agent_actions (action_type, details, metadata)
+               VALUES ($1, $2, $3)"#,
+        )
+        .bind(action_type)
+        .bind(details)
+        .bind(metadata)
+        .execute(&self.pool)
+        .await
+        .with_context(|| "failed to insert agent_action")?;
+
+        Ok(())
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct DbProgramRow {
-    id: String,
-    code: String,
-    language: String,
-    parent_id: Option<String>,
-    generation: u32,
-    combined_score: f64,
-    correct: u8,
-    public_metrics: String,
-    private_metrics: String,
-    text_feedback: String,
-    metadata: String,
-    timestamp: String,
-}
-
-impl DbProgramRow {
-    fn from_program(p: &Program) -> Result<Self> {
-        Ok(Self {
-            id: p.id.clone(),
-            code: p.code.clone(),
-            language: p.language.clone(),
-            parent_id: p.parent_id.clone(),
-            generation: p.generation as u32,
-            combined_score: p.combined_score,
-            correct: if p.correct { 1 } else { 0 },
-            public_metrics: serde_json::to_string(&p.public_metrics)?,
-            private_metrics: serde_json::to_string(&p.private_metrics)?,
-            text_feedback: p.text_feedback.clone(),
-            metadata: serde_json::to_string(&p.metadata)?,
-            timestamp: p.timestamp.to_rfc3339(),
-        })
-    }
-
-    fn try_into_program(self) -> Result<Program> {
-        let public_metrics = serde_json::from_str::<HashMap<String, serde_json::Value>>(&self.public_metrics)
-            .unwrap_or_default();
-        let private_metrics = serde_json::from_str::<HashMap<String, serde_json::Value>>(&self.private_metrics)
-            .unwrap_or_default();
-        let metadata = serde_json::from_str::<HashMap<String, serde_json::Value>>(&self.metadata)
-            .unwrap_or_default();
-        let timestamp = DateTime::parse_from_rfc3339(&self.timestamp)
-            .map(|dt| dt.with_timezone(&Utc))
-            .unwrap_or_else(|_| Utc::now());
-
-        Ok(Program {
-            id: self.id,
-            code: self.code,
-            language: self.language,
-            parent_id: self.parent_id,
-            generation: self.generation as usize,
-            combined_score: self.combined_score,
-            correct: self.correct == 1,
-            public_metrics,
-            private_metrics,
-            text_feedback: self.text_feedback,
-            metadata,
-            timestamp,
-        })
-    }
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct IndividualRow {
+    pub run_id: Uuid,
+    pub individual_id: Uuid,
+    pub generation: i32,
+    pub timestamp: DateTime<Utc>,
+    pub parent_id: Option<Uuid>,
+    pub mutation_type: String,
+    pub fitness_score: f64,
+    pub combined_score: f64,
+    pub metrics: JsonValue,
+    pub is_pareto: bool,
+    pub api_cost: f64,
+    pub embed_cost: f64,
+    pub novelty_cost: f64,
+    pub code_hash: String,
+    pub code_size: i32,
 }

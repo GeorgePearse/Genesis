@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use reqwest::blocking::Client;
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 use crate::config::EvolutionConfig;
@@ -11,30 +11,48 @@ pub struct LlmResponse {
     pub thought: String,
 }
 
-pub trait LlmClient {
-    fn query(&self, user_msg: &str, system_msg: &str) -> Result<LlmResponse>;
+pub trait LlmClient: Send + Sync {
+    fn query(
+        &self,
+        user_msg: &str,
+        system_msg: &str,
+    ) -> impl std::future::Future<Output = Result<LlmResponse>> + Send;
 }
 
-pub fn build_llm_client(cfg: &EvolutionConfig) -> Result<Box<dyn LlmClient>> {
+pub fn build_llm_client(cfg: &EvolutionConfig) -> Result<Box<dyn LlmClientDyn>> {
     match cfg.llm_backend.as_str() {
         "openai" => Ok(Box::new(OpenAiClient::new(cfg)?)),
         _ => Ok(Box::new(MockLlmClient)),
     }
 }
 
+pub trait LlmClientDyn: Send + Sync {
+    fn query_dyn(
+        &self,
+        user_msg: &str,
+        system_msg: &str,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<LlmResponse>> + Send + '_>>;
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct MockLlmClient;
 
-impl LlmClient for MockLlmClient {
-    fn query(&self, user_msg: &str, _system_msg: &str) -> Result<LlmResponse> {
+impl LlmClientDyn for MockLlmClient {
+    fn query_dyn(
+        &self,
+        user_msg: &str,
+        _system_msg: &str,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<LlmResponse>> + Send + '_>> {
         let code = format!(
-            "<NAME>mock-patch</NAME>\n<DESCRIPTION>Mock mutation from Rust backend</DESCRIPTION>\n```python\n# mutated\n{}\n```",
+            "<NAME>mock-patch</NAME>\n<DESCRIPTION>Mock mutation</DESCRIPTION>\n```python\n# mutated\n{}\n```",
             user_msg.lines().take(3).collect::<Vec<_>>().join("\n")
         );
-        Ok(LlmResponse {
-            content: code,
-            cost: 0.0,
-            thought: "mock-thought".to_string(),
+        Box::pin(async move {
+            Ok(LlmResponse {
+                content: code,
+                cost: 0.0,
+                thought: "mock-thought".to_string(),
+            })
         })
     }
 }
@@ -62,9 +80,16 @@ impl OpenAiClient {
     }
 }
 
-impl LlmClient for OpenAiClient {
-    fn query(&self, user_msg: &str, system_msg: &str) -> Result<LlmResponse> {
-        let url = format!("{}/v1/chat/completions", self.base_url.trim_end_matches('/'));
+impl LlmClientDyn for OpenAiClient {
+    fn query_dyn(
+        &self,
+        user_msg: &str,
+        system_msg: &str,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<LlmResponse>> + Send + '_>> {
+        let url = format!(
+            "{}/v1/chat/completions",
+            self.base_url.trim_end_matches('/')
+        );
         let req = OpenAiChatRequest {
             model: self.model.clone(),
             messages: vec![
@@ -80,29 +105,34 @@ impl LlmClient for OpenAiClient {
             temperature: Some(0.7),
         };
 
-        let resp = self
-            .http
-            .post(url)
-            .bearer_auth(&self.api_key)
-            .json(&req)
-            .send()
-            .with_context(|| "openai request failed")?
-            .error_for_status()
-            .with_context(|| "openai non-success response")?
-            .json::<OpenAiChatResponse>()
-            .with_context(|| "failed to decode openai response")?;
+        let http = self.http.clone();
+        let api_key = self.api_key.clone();
 
-        let content = resp
-            .choices
-            .first()
-            .map(|c| c.message.content.clone())
-            .unwrap_or_default();
+        Box::pin(async move {
+            let resp = http
+                .post(url)
+                .bearer_auth(&api_key)
+                .json(&req)
+                .send()
+                .await
+                .with_context(|| "openai request failed")?
+                .error_for_status()
+                .with_context(|| "openai non-success response")?
+                .json::<OpenAiChatResponse>()
+                .await
+                .with_context(|| "failed to decode openai response")?;
 
-        let cost = 0.0;
-        Ok(LlmResponse {
-            content,
-            cost,
-            thought: String::new(),
+            let content = resp
+                .choices
+                .first()
+                .map(|c| c.message.content.clone())
+                .unwrap_or_default();
+
+            Ok(LlmResponse {
+                content,
+                cost: 0.0,
+                thought: String::new(),
+            })
         })
     }
 }

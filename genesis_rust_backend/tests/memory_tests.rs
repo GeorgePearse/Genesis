@@ -42,5 +42,8 @@ fn gepa_returns_candidate_and_fewshot() {
     );
 
     let ctx2 = gepa.build_prompt_context();
-    assert!(ctx2.fewshot_examples.unwrap_or_default().contains("Successful Trace"));
+    assert!(ctx2
+        .fewshot_examples
+        .unwrap_or_default()
+        .contains("Successful Trace"));
 }
