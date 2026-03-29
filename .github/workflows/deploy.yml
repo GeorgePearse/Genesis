@@ -96,7 +96,15 @@ jobs:
         run: |
           ./cloud-sql-proxy "${{ secrets.CLOUD_SQL_CONNECTION_NAME }}" \
             --port 5432 &
-          sleep 5
+          # Wait for proxy to be ready
+          for i in {1..30}; do
+            if nc -z localhost 5432 2>/dev/null; then
+              echo "Cloud SQL Proxy is ready"
+              break
+            fi
+            echo "Waiting for Cloud SQL Proxy... ($i/30)"
+            sleep 2
+          done
 
       - name: Run migrations
         working-directory: migrations
