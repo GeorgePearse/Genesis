@@ -8,6 +8,7 @@
     "server": "tsx server/index.ts",
     "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
     "build": "tsc -b && oxlint . && vite build",
+    "test:e2e": "playwright test",
     "lint": "eslint .",
     "lint:oxc": "oxlint .",
     "lint:fix": "eslint . --fix",
@@ -41,6 +42,7 @@
     "react-dom": "^19.1.1",
     "react-plotly.js": "^2.6.0",
     "react-router-dom": "^7.9.4",
+    "tailwind-merge": "^3.3.1",
     "tsx": "^4.20.6"
   },
   "devDependencies": {
