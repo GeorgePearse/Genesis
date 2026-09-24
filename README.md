@@ -22,6 +22,8 @@ The system is inspired by the [AI Scientist](https://sakana.ai/ai-scientist/), [
 
 The framework supports **parallel evaluation of candidates** locally or in cloud sandboxes (E2B). It maintains an archive of successful solutions, enabling knowledge transfer between different evolutionary islands. `Genesis` is particularly well-suited for scientific tasks where there is a verifier available and the goal is to optimize performance metrics while maintaining code correctness and readability.
 
+`Genesis` also goes by the name **`hiker`**: the whole system is built for hill-climbing. Every generation takes the best programs found so far, proposes small steps from them, keeps the steps that score higher on the verifier, and repeats.
+
 ![](docs/conceptual.png)
 
 ## Documentation 📝
