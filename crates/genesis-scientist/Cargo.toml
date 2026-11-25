@@ -1,0 +1,27 @@
+[package]
+name = "genesis-scientist"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The science pipeline around the evolution loop: ideas and rubrics, coding-agent operators, ablations, sealed final evaluation, post-hoc analysis, paper writing with an evidence audit, review and revision"
+
+[dependencies]
+genesis-core.workspace = true
+genesis-edit.workspace = true
+genesis-llm.workspace = true
+genesis-evolve.workspace = true
+anyhow.workspace = true
+async-trait.workspace = true
+chrono.workspace = true
+rand.workspace = true
+rand_chacha.workspace = true
+regex.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+ephyra.workspace = true
+tempfile.workspace = true

@@ -1,0 +1,60 @@
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+# The Cloud Run API server keeps its own lockfile and Docker build context.
+exclude = ["genesis_rust_backend"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.91"
+license = "Apache-2.0"
+repository = "https://github.com/GeorgePearse/Genesis"
+
+[workspace.dependencies]
+genesis-core = { path = "crates/genesis-core" }
+genesis-edit = { path = "crates/genesis-edit" }
+genesis-llm = { path = "crates/genesis-llm" }
+genesis-evolve = { path = "crates/genesis-evolve" }
+genesis-scientist = { path = "crates/genesis-scientist" }
+genesis-evidence = { path = "crates/genesis-evidence" }
+genesis-paper = { path = "crates/genesis-paper" }
+
+anyhow = "1"
+async-trait = "0.1"
+axum = "0.8"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4", features = ["derive", "env"] }
+# Property-based testing: https://github.com/datadog-labs/ephyra
+ephyra = "0.0.1"
+futures = "0.3"
+hex = "0.4"
+libc = "0.2"
+rand = "0.8"
+rand_chacha = "0.3"
+regex = "1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+# float_roundtrip: an f64 written to an artifact reads back bit for bit.
+serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }
+serde_yaml = "0.9"
+sha2 = "0.10"
+similar = "2"
+tempfile = "3"
+thiserror = "1"
+tokio = { version = "1", features = ["full"] }
+toml = "0.8"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+walkdir = "2"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 4
+strip = true
+
+[profile.dev]
+debug = 1

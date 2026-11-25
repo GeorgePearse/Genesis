@@ -1,0 +1,36 @@
+[package]
+name = "genesis-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The genesis command: program evolution, the full science pipeline, and the run inspector"
+
+[lib]
+name = "genesis_cli"
+path = "src/lib.rs"
+
+[[bin]]
+name = "genesis"
+path = "src/main.rs"
+
+[dependencies]
+genesis-core.workspace = true
+genesis-llm.workspace = true
+genesis-evolve.workspace = true
+genesis-scientist.workspace = true
+genesis-evidence.workspace = true
+genesis-paper.workspace = true
+anyhow.workspace = true
+axum.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+ephyra.workspace = true
+tempfile.workspace = true
+reqwest.workspace = true

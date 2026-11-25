@@ -57,6 +57,25 @@ This document provides a comprehensive guide for both human developers and AI ag
   flake8 genesis tests
   ```
 
+### Rust engine
+- **Build and install the `genesis` binary:**
+  ```bash
+  cargo install --path crates/genesis-cli
+  ```
+- **Run the evolution loop offline (no credentials):**
+  ```bash
+  genesis evolve examples/circle_packing_rs --config configs/rust/offline_demo.yaml
+  ```
+- **Check, lint, and test the workspace:**
+  ```bash
+  cargo fmt --all --check
+  cargo clippy --workspace --all-targets -- -D warnings
+  cargo test --workspace
+  ```
+- The property tests use [ephyra](https://github.com/datadog-labs/ephyra). A failure prints an
+  `EPHYRA_REPLAY=<seed>:<iteration>` line that reruns exactly that case. Never weaken a property to make it
+  pass; a real bug gets a plain regression test that names the replay line.
+
 ---
 
 ## 2. Project Structure
@@ -78,6 +97,16 @@ Understanding the layout is crucial for navigation.
 | **`tests/`** | **Unit & Integration Tests**. Mirrors `genesis/` structure. |
 | **`docs/`** | **Documentation**. Markdown files for MkDocs. |
 | **`genesis/webui/frontend/`** | **React Frontend**. Modern UI code (Vite + React + Tailwind + Shadcn). |
+| **`crates/`** | **Rust engine**. The `genesis` binary and its libraries; see `docs/rust_engine.md`. |
+| `crates/genesis-core/` | Program record, task contract, evaluation launcher, journal, cost ledger, config, statistics. |
+| `crates/genesis-edit/` | EVOLVE-BLOCK patch application and code metrics. |
+| `crates/genesis-llm/` | Model backends, pricing, bandits, embeddings, coding-agent CLIs. |
+| `crates/genesis-evolve/` | Run database, islands, selection, prompts, the evolution runner. |
+| `crates/genesis-scientist/` | Ideas, rubrics, memory, the agent operator, task drafting, the investigation phase. |
+| `crates/genesis-evidence/` | Ablations, sealed final evaluation, post-hoc analysis. |
+| `crates/genesis-paper/` | Paper writing, evidence audit, review, revision. |
+| `crates/genesis-cli/` | The `genesis` command, the pipeline, `doctor`, the inspector. |
+| **`genesis_rust_backend/`** | The Cloud Run API server. A separate crate with its own lockfile; a push to `main` that touches it deploys. |
 
 ---
 

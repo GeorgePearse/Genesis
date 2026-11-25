@@ -1,0 +1,26 @@
+Genesis
+
+The Rust engine under crates/ is a derivative work of two projects released
+by Sakana AI under the Apache License, Version 2.0. Both were rewritten in
+Rust and combined into one engine; docs/rust_engine.md lists what changed.
+
+  ShinkaEvolve  https://github.com/SakanaAI/ShinkaEvolve
+  Copyright 2025 Sakana AI
+    The island archive, parent and inspiration sampling, the SEARCH/REPLACE
+    and full-rewrite patch formats with EVOLVE-BLOCK regions, the bandits
+    for model selection, novelty rejection, the meta scratchpad, prompt
+    co-evolution, the run-database schema, the bundled model price table,
+    and the prompt templates in crates/genesis-evolve/src/prompts/templates.rs.
+
+  The Agentic Scientist (AI-Scientist-v3)  https://github.com/SakanaAI/AI-Scientist-v3
+  Copyright 2026 Sakana AI
+    Ideas with target rubrics, harness-evaluated coding-agent attempts,
+    campaign memory with distilled conclusions, the run envelope and its
+    phases (task drafting, investigation, ablations, sealed final
+    evaluation, post-hoc analysis, paper with an evidence audit, review,
+    revision), and the prompts those phases adapt.
+
+The Python package under genesis/ is a fork of ShinkaEvolve.
+
+Property tests use ephyra (https://github.com/datadog-labs/ephyra),
+Copyright (c) 2026 Datadog, Inc., MIT License.

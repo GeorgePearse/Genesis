@@ -1,0 +1,17 @@
+[package]
+name = "genesis-edit"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "EVOLVE-BLOCK aware patch application: SEARCH/REPLACE diffs, full rewrites, code metrics"
+
+[dependencies]
+regex.workspace = true
+serde.workspace = true
+similar.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+ephyra.workspace = true

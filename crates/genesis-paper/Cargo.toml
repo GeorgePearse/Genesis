@@ -1,0 +1,29 @@
+[package]
+name = "genesis-paper"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Paper writing from run evidence: grounding data, manuscript, references, an evidence audit, review and revision"
+
+[dependencies]
+genesis-core.workspace = true
+genesis-llm.workspace = true
+genesis-evolve.workspace = true
+genesis-scientist.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+futures.workspace = true
+rand.workspace = true
+rand_chacha.workspace = true
+regex.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+ephyra.workspace = true
+tempfile.workspace = true
+axum.workspace = true

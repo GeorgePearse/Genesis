@@ -57,6 +57,7 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Genesis in Rust: rust_engine.md
   - Getting Started: getting_started.md
   - Guides:
     - Configuration: configuration.md
