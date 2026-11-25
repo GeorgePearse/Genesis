@@ -10,6 +10,36 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  rust-workspace:
+    name: Genesis engine (Rust workspace)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      # Unit, end-to-end and ephyra property tests. The property tests draw a
+      # fresh seed each run; a failure prints an EPHYRA_REPLAY line.
+      - name: Tests
+        run: cargo test --workspace
+
+      - name: Offline demo run
+        run: |
+          cargo run --quiet --bin genesis -- evolve examples/circle_packing_rs \
+            --results-dir "$RUNNER_TEMP/demo" \
+            'evo.llm_models=[mock/perturb]' evo.num_generations=6 evo.max_evaluation_jobs=2
+          test -f "$RUNNER_TEMP/demo/best/main.rs"
+
   rust-check:
     name: Rust lint & test
     runs-on: ubuntu-latest

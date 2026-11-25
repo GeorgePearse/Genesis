@@ -26,10 +26,34 @@ The framework supports **parallel evaluation of candidates** locally or in cloud
 
 ![](docs/conceptual.png)
 
+## Genesis in Rust 🦀
+
+The `genesis` binary is a Rust port of [ShinkaEvolve](https://github.com/SakanaAI/ShinkaEvolve) and of
+[the Agentic Scientist](https://github.com/SakanaAI/AI-Scientist-v3) (AI-Scientist-v3), combined into one engine.
+It evolves a program with an ensemble of models and coding agents. Then it runs ablations, a sealed final
+evaluation, and post-hoc analysis, and writes a paper whose numbers are audited against the run.
+
+```bash
+cargo install --path crates/genesis-cli
+
+# No credentials needed: an offline mutator produces a full run directory.
+genesis evolve examples/circle_packing_rs --config configs/rust/offline_demo.yaml
+genesis inspect
+
+# The whole pipeline, with real models.
+export ANTHROPIC_API_KEY=...
+genesis run examples/circle_packing_rs --config configs/rust/pipeline_quickstart.yaml
+```
+
+It reads the same task layout as the Python package and writes the same run database schema.
+See [Genesis in Rust](docs/rust_engine.md) for tasks, engines, the pipeline, models, and what differs from the
+originals.
+
 ## Documentation 📝
 
 | Guide | Description | What You'll Learn |
 |-------|-------------|-------------------|
+| 🦀 **[Genesis in Rust](docs/rust_engine.md)** | The Rust engine and the science pipeline | The `genesis` binary, tasks, engines, phases, models |
 | 🚀 **[Getting Started](docs/getting_started.md)** | Installation, basic usage, and examples | Setup, first evolution run, core concepts |
 | 📓 **[Tutorial Notebook](examples/genesis_tutorial.ipynb)** | Interactive walkthrough of Genesis features | Hands-on examples, configuration, best practices |
 | 🛠️ **[Creating Tasks](docs/creating_tasks.md)** | Guide to creating custom tasks | File structure, evaluation scripts, configuration |
