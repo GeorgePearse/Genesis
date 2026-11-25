@@ -120,7 +120,7 @@ jobs:
         run: |
           # Normalize function: strip version comments and other pg_dump metadata
           normalize() {
-            sed '/^-- Dumped from database version/d; /^-- Dumped by pg_dump version/d; /^\\restrict/d; /^\\unrestrict/d; /^SELECT pg_catalog/d; /^SET default_table_access_method/d' "$1"
+            sed '/^-- Dumped from database version/d; /^-- Dumped by pg_dump version/d; /^\\restrict/d; /^\\unrestrict/d; /^SELECT pg_catalog/d; /^SET default_table_access_method/d; /^SET transaction_timeout/d' "$1"
           }
           PGPASSWORD=genesis_test pg_dump \
             -h localhost -p 5432 -U genesis -d genesis_test \
