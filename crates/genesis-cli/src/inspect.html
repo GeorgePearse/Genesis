@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Genesis runs</title>
+<style>
+:root {
+  --bg: #fbfbf9; --panel: #ffffff; --ink: #1c1e21; --muted: #666c75; --line: #dcdfe4;
+  --accent: #0b7285; --good: #2b8a3e; --bad: #c92a2a; --warn: #a66300; --code: #f3f4f6;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14161a; --panel: #1c1f25; --ink: #e6e8eb; --muted: #9aa1ac; --line: #30353d;
+    --accent: #66d9e8; --good: #69db7c; --bad: #ff8787; --warn: #ffc078; --code: #23272e;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.45 system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+header { padding: 10px 16px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+header h1 { font-size: 16px; margin: 0; }
+select, button { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 4px 8px; }
+button.tab[aria-selected="true"] { border-color: var(--accent); color: var(--accent); }
+main { padding: 16px; max-width: 1400px; margin: 0 auto; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+.card .label { color: var(--muted); font-size: 12px; }
+.card .value { font-size: 18px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+table { border-collapse: collapse; width: 100%; background: var(--panel); border: 1px solid var(--line); }
+th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; white-space: nowrap; }
+th { cursor: pointer; color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--panel); }
+tr.row { cursor: pointer; }
+tr.row:hover td { background: var(--code); }
+.good { color: var(--good); } .bad { color: var(--bad); } .warn { color: var(--warn); } .muted { color: var(--muted); }
+pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; overflow: auto; max-height: 60vh; font: 12px/1.4 ui-monospace, monospace; white-space: pre; }
+pre.wrap { white-space: pre-wrap; }
+.split { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 14px; }
+@media (max-width: 1000px) { .split { grid-template-columns: 1fr; } }
+svg { width: 100%; height: 280px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+h2 { font-size: 14px; margin: 16px 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.scroll { max-height: 70vh; overflow: auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Genesis runs</h1>
+  <select id="run" aria-label="Run"></select>
+  <span id="tabs"></span>
+  <span id="note" class="muted"></span>
+</header>
+<main id="view"></main>
+<script>
+"use strict";
+const TABS = ["Overview", "Programs", "Events", "Costs", "Paper"];
+const state = { run: null, tab: "Overview", programs: [], sort: { key: "generation", dir: 1 } };
+const $ = (id) => document.getElementById(id);
+
+// Every value from a run is inserted with textContent, never as markup.
+function el(tag, attrs, ...children) {
+  const node = document.createElement(tag);
+  for (const [key, value] of Object.entries(attrs || {})) {
+    if (key === "class") node.className = value;
+    else if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+    else node.setAttribute(key, value);
+  }
+  for (const child of children) node.append(child instanceof Node ? child : document.createTextNode(String(child ?? "")));
+  return node;
+}
+function svg(tag, attrs) {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+  return node;
+}
+const fmt = (value, digits = 4) => (typeof value === "number" && isFinite(value) ? value.toFixed(digits) : "–");
+async function api(path, params) {
+  const query = new URLSearchParams(Object.assign({ run: state.run }, params || {}));
+  const response = await fetch(`${path}?${query}`);
+  if (!response.ok) throw new Error(`${path}: ${response.status}`);
+  return response;
+}
+function card(label, value, cls) {
+  return el("div", { class: "card" }, el("div", { class: "label" }, label), el("div", { class: "value " + (cls || "") }, value));
+}
+
+function chart(programs) {
+  const own = programs.filter((p) => !p.copy);
+  const root = svg("svg", { viewBox: "0 0 900 280", role: "img", "aria-label": "Score by generation" });
+  if (!own.length) return root;
+  const xs = own.map((p) => p.generation);
+  const scored = own.filter((p) => p.correct).map((p) => p.combined_score);
+  const lo = Math.min(...(scored.length ? scored : [0])), hi = Math.max(...(scored.length ? scored : [1]));
+  const pad = (hi - lo || 1) * 0.08, y0 = lo - pad, y1 = hi + pad, x1 = Math.max(...xs, 1);
+  const X = (g) => 50 + (g / x1) * 830, Y = (s) => 250 - ((s - y0) / (y1 - y0)) * 230;
+  for (const tick of [y0 + pad, (lo + hi) / 2, hi]) {
+    root.append(svg("line", { x1: 50, x2: 880, y1: Y(tick), y2: Y(tick), stroke: "var(--line)" }));
+    const label = svg("text", { x: 44, y: Y(tick) + 4, "text-anchor": "end", "font-size": 11, fill: "var(--muted)" });
+    label.textContent = tick.toFixed(3);
+    root.append(label);
+  }
+  let best = -Infinity; const path = [];
+  for (const p of [...own].sort((a, b) => a.generation - b.generation)) {
+    if (!p.correct) { root.append(svg("circle", { cx: X(p.generation), cy: 262, r: 3, fill: "var(--bad)", opacity: 0.6 })); continue; }
+    root.append(svg("circle", { cx: X(p.generation), cy: Y(p.combined_score), r: 3, fill: "var(--accent)", opacity: 0.55 }));
+    // A step line: the best holds until the generation that beats it.
+    if (!path.length) path.push(`M${X(p.generation)},${Y(p.combined_score)}`);
+    else if (p.combined_score > best) path.push(`H${X(p.generation)}`, `V${Y(p.combined_score)}`);
+    if (p.combined_score > best) { best = p.combined_score; }
+  }
+  if (path.length) root.append(svg("path", { d: path.concat(`H${X(x1)}`).join(" "), fill: "none", stroke: "var(--good)", "stroke-width": 2 }));
+  const axis = svg("text", { x: 465, y: 277, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)" });
+  axis.textContent = `generation (0–${x1}); line: best so far; red: incorrect`;
+  root.append(axis);
+  return root;
+}
+
+async function overview(view) {
+  const summary = await (await api("/api/run/summary")).json();
+  const best = summary.best, status = summary.pipeline_status, runSummary = summary.run_summary || {};
+  const grid = el("div", { class: "grid" });
+  grid.append(card("Best score", best ? fmt(best.combined_score, 6) : "–", "good"));
+  grid.append(card("Best from", best ? `generation ${best.generation}` : "–"));
+  grid.append(card("Programs", String(state.programs.filter((p) => !p.copy).length)));
+  grid.append(card("Stop reason", runSummary.stop_reason || (summary.completion || {}).status || "running"));
+  if (status) grid.append(card("Pipeline", status.status, status.status === "completed" ? "good" : "warn"));
+  if (summary.selection) grid.append(card("Studied program", summary.selection.selection_kind));
+  if (summary.final_manifest) grid.append(card("Final evaluation", summary.final_manifest.outcome, summary.final_manifest.outcome === "qualified" ? "good" : "bad"));
+  if (summary.cost) grid.append(card("Model spend", `$${fmt(summary.cost.total_cost_usd, 4)}`));
+  view.append(grid, chart(state.programs));
+  if (status) {
+    view.append(el("h2", {}, "Phases"));
+    const table = el("table", {}, el("tr", {}, ...["phase", "status", "reason", "seconds"].map((h) => el("th", {}, h))));
+    for (const phase of status.phases || []) {
+      const cls = phase.status === "completed" ? "good" : phase.status === "failed" ? "bad" : "warn";
+      table.append(el("tr", {}, el("td", {}, phase.phase), el("td", { class: cls }, phase.status), el("td", { style: "white-space:normal" }, phase.reason || ""), el("td", {}, fmt(phase.elapsed_secs, 1))));
+    }
+    view.append(table);
+  }
+  if (summary.conclusions) view.append(el("h2", {}, "Distilled conclusions"), el("pre", { class: "wrap" }, summary.conclusions));
+  if (summary.meta && summary.meta.recommendations) view.append(el("h2", {}, "Scratchpad recommendations"), el("pre", { class: "wrap" }, summary.meta.recommendations));
+  if (summary.ablations) {
+    view.append(el("h2", {}, "Ablations"));
+    const table = el("table", {}, el("tr", {}, ...["variant", "kind", "status", "n", "mean", "delta vs control", "p"].map((h) => el("th", {}, h))));
+    for (const variant of summary.ablations.variants || []) {
+      const s = variant.summary || {}, c = variant.comparison_to_control || {};
+      table.append(el("tr", {}, el("td", {}, variant.spec.variant_id), el("td", {}, variant.spec.kind), el("td", {}, variant.status), el("td", {}, String(s.n ?? "–")), el("td", {}, fmt(s.mean, 5)), el("td", {}, fmt(c.mean_diff, 5)), el("td", {}, fmt(c.p_value, 4))));
+    }
+    view.append(table);
+  }
+}
+
+async function showProgram(id, detail) {
+  const data = await (await api("/api/run/program", { id })).json();
+  const p = data.program, m = p.metadata || {};
+  detail.replaceChildren(
+    el("h2", {}, `${m.patch_name || "program"} · generation ${p.generation}`),
+    el("div", { class: "grid" },
+      card("Score", fmt(p.combined_score, 6), p.correct ? "good" : "bad"),
+      card("Correct", String(p.correct), p.correct ? "good" : "bad"),
+      card("Operator", `${m.patch_type || "–"} / ${m.arm || "–"}`)),
+    el("div", { class: "muted" }, m.patch_description || ""));
+  if (data.lineage.length) detail.append(el("h2", {}, "Lineage"), el("pre", {}, data.lineage.map((a) => `gen ${a.generation}  ${fmt(a.combined_score, 5)}  ${a.name || ""}`).join("\n")));
+  if (m.idea) detail.append(el("h2", {}, "Idea"), el("pre", { class: "wrap" }, `${m.idea.title}\n${m.idea.hypothesis}`));
+  if (m.rubric_status) detail.append(el("h2", {}, "Rubrics"), el("pre", { class: "wrap" }, m.rubric_status.rubrics.map((r) => `${r.pass ? "PASS" : r.assessment === "not_assessed" ? "N/A " : "FAIL"}  ${r.id}: ${r.evidence}`).join("\n")));
+  if (p.text_feedback) detail.append(el("h2", {}, "Evaluator feedback"), el("pre", { class: "wrap" }, p.text_feedback));
+  if (p.code_diff) detail.append(el("h2", {}, "Diff from parent"), el("pre", {}, p.code_diff));
+  detail.append(el("h2", {}, "Code"), el("pre", {}, p.code));
+}
+
+function programsTable(view) {
+  const columns = [["generation", "gen"], ["name", "name"], ["combined_score", "score"], ["correct", "correct"], ["patch_type", "type"], ["arm", "arm"], ["island", "island"], ["children", "children"], ["in_archive", "archive"], ["cost_usd", "cost $"]];
+  const detail = el("div", {}, el("p", { class: "muted" }, "Select a program."));
+  const table = el("table");
+  const draw = () => {
+    const { key, dir } = state.sort;
+    const rows = [...state.programs].sort((a, b) => (a[key] > b[key] ? 1 : a[key] < b[key] ? -1 : 0) * dir);
+    table.replaceChildren(el("tr", {}, ...columns.map(([k, label]) => el("th", { onclick: () => { state.sort = { key: k, dir: state.sort.key === k ? -dir : 1 }; draw(); } }, label + (key === k ? (dir > 0 ? " ↑" : " ↓") : "")))));
+    for (const p of rows) {
+      table.append(el("tr", { class: "row", onclick: () => showProgram(p.id, detail) },
+        el("td", {}, String(p.generation)), el("td", {}, (p.name || p.id.slice(0, 8)) + (p.copy ? " (copy)" : "")),
+        el("td", {}, fmt(p.combined_score, 5)), el("td", { class: p.correct ? "good" : "bad" }, p.correct ? "yes" : "no"),
+        el("td", {}, p.patch_type || ""), el("td", {}, p.arm || ""), el("td", {}, String(p.island ?? "")),
+        el("td", {}, String(p.children)), el("td", {}, p.in_archive ? "yes" : ""), el("td", {}, fmt(p.cost_usd, 4))));
+    }
+  };
+  draw();
+  view.append(el("div", { class: "split" }, el("div", { class: "scroll" }, table), detail));
+}
+
+async function eventsView(view) {
+  const data = await (await api("/api/run/events", { limit: 600 })).json();
+  const lines = data.events.map((e) => {
+    const rest = Object.entries(e).filter(([k, v]) => !["ts", "elapsed_s", "level", "event"].includes(k) && v !== null).map(([k, v]) => `${k}=${typeof v === "object" ? JSON.stringify(v) : v}`).join(" ");
+    return `[${String(e.elapsed_s ?? "").padStart(8)}s] ${e.level === "info" ? "" : (e.level || "").toUpperCase() + " "}${e.event}  ${rest}`;
+  });
+  view.append(el("p", { class: "muted" }, `${data.events.length} of ${data.total} events`), el("pre", {}, lines.join("\n")));
+}
+
+async function costsView(view) {
+  const cost = (await (await api("/api/run/summary")).json()).cost;
+  if (!cost) { view.append(el("p", { class: "muted" }, "No cost ledger for this run.")); return; }
+  view.append(el("div", { class: "grid" }, card("Total", `$${fmt(cost.total_cost_usd, 4)}`), card("Provider-reported", `$${fmt(cost.reported_cost_usd, 4)}`), card("List-price estimates", `$${fmt(cost.estimated_cost_usd, 4)}`), card("Unpriced calls", String(cost.unpriced_calls))));
+  for (const [title, group] of [["By phase and stage", cost.by_stage], ["By model", cost.by_model], ["By source", cost.by_source]]) {
+    const table = el("table", {}, el("tr", {}, ...["", "calls", "input tokens", "output tokens", "cost $"].map((h) => el("th", {}, h))));
+    for (const [name, b] of Object.entries(group || {})) table.append(el("tr", {}, el("td", {}, name), el("td", {}, String(b.calls)), el("td", {}, String(b.input_tokens)), el("td", {}, String(b.output_tokens)), el("td", {}, fmt(b.cost_usd, 4))));
+    view.append(el("h2", {}, title), table);
+  }
+}
+
+async function paperView(view) {
+  const manifest = (await (await api("/api/run/summary")).json()).paper_manifest;
+  if (!manifest) { view.append(el("p", { class: "muted" }, "This run has no published paper.")); return; }
+  const grid = el("div", { class: "grid" }, card("Evidence audit", manifest.evidence_audit_verdict, manifest.evidence_audit_verdict === "pass" ? "good" : "bad"), card("Validation", manifest.validation_ok ? "ok" : "failed", manifest.validation_ok ? "good" : "bad"));
+  for (const [key, review] of Object.entries(manifest.reviews || {})) grid.append(card(key, review.status === "completed" ? `${review.overall}/10 ${review.decision}` : review.status));
+  view.append(grid);
+  if (manifest.paper_pdf) view.append(el("p", {}, el("a", { href: `/api/run/file?${new URLSearchParams({ run: state.run, path: manifest.paper_pdf })}`, target: "_blank", rel: "noopener" }, "Open the PDF")));
+  const text = await (await api("/api/run/file", { path: manifest.paper_md })).text();
+  view.append(el("pre", { class: "wrap" }, text));
+}
+
+async function render() {
+  const view = $("view");
+  view.replaceChildren();
+  $("tabs").replaceChildren(...TABS.map((tab) => el("button", { class: "tab", "aria-selected": String(tab === state.tab), onclick: () => { state.tab = tab; render(); } }, tab)));
+  if (!state.run) { view.append(el("p", { class: "muted" }, "No runs found under the results root.")); return; }
+  try {
+    state.programs = (await (await api("/api/run/programs")).json()).programs;
+    if (state.tab === "Overview") await overview(view);
+    else if (state.tab === "Programs") programsTable(view);
+    else if (state.tab === "Events") await eventsView(view);
+    else if (state.tab === "Costs") await costsView(view);
+    else await paperView(view);
+  } catch (error) {
+    view.append(el("p", { class: "bad" }, String(error)));
+  }
+}
+
+async function start() {
+  const data = await (await fetch("/api/runs")).json();
+  $("note").textContent = data.root;
+  const select = $("run");
+  for (const run of data.runs) select.append(el("option", { value: run.id }, `${run.id}  [${run.kind}${run.status ? ", " + run.status : ""}${run.best_score != null ? ", best " + fmt(run.best_score, 4) : ""}]`));
+  select.addEventListener("change", () => { state.run = select.value; render(); });
+  state.run = data.runs.length ? data.runs[0].id : null;
+  render();
+}
+start();
+</script>
+</body>
+</html>

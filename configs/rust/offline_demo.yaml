@@ -1,0 +1,14 @@
+# No credentials needed: the built-in `mock/perturb` mutator nudges numeric
+# literals inside the EVOLVE-BLOCK. Useful to see a run directory and the
+# inspector, and as a smoke test.
+#   genesis evolve examples/circle_packing_rs --config configs/rust/offline_demo.yaml
+
+evo:
+  num_generations: 30
+  max_evaluation_jobs: 4
+  llm_models: [mock/perturb]
+  patch_types: [diff, full]
+  patch_type_probs: [0.5, 0.5]
+
+db:
+  num_islands: 2

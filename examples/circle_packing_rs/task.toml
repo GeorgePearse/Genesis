@@ -1,0 +1,5 @@
+name = "circle_packing_rs"
+language = "rust"
+init_program = "initial.rs"
+eval_timeout_secs = 180
+reference_score = 2.635
