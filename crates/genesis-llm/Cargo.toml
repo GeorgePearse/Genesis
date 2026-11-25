@@ -1,0 +1,29 @@
+[package]
+name = "genesis-llm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Model access for Genesis: hosted APIs, coding-agent CLIs, embeddings, pricing and model-selection bandits"
+
+[dependencies]
+genesis-core.workspace = true
+anyhow.workspace = true
+async-trait.workspace = true
+libc.workspace = true
+rand.workspace = true
+rand_distr = "0.4"
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+axum.workspace = true
+ephyra.workspace = true
+tempfile.workspace = true
