@@ -189,3 +189,6 @@ genesis_rust_backend/target/
 
 # SQLx offline cache (committed intentionally, but gitignore target)
 # genesis_rust_backend/.sqlx/
+
+# ephyra property-test artifacts (found bugs get a plain regression test instead)
+.ephyra/
