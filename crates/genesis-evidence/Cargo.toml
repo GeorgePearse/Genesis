@@ -1,0 +1,30 @@
+[package]
+name = "genesis-evidence"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The evidence phases after a search: ablations with replications, a sealed final evaluation, post-hoc analysis"
+
+[dependencies]
+genesis-core.workspace = true
+genesis-edit.workspace = true
+genesis-llm.workspace = true
+genesis-evolve.workspace = true
+genesis-scientist.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+futures.workspace = true
+rand.workspace = true
+rand_chacha.workspace = true
+regex.workspace = true
+serde.workspace = true
+# Evidence is compared and digested after a round trip through JSON, so
+# floats must parse back to the exact value that was written.
+serde_json.workspace = true
+
+[dev-dependencies]
+ephyra.workspace = true
+tempfile.workspace = true
+tokio.workspace = true
