@@ -1,0 +1,29 @@
+[package]
+name = "genesis-evolve"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "LLM-driven program evolution: island archive, parent selection, patch operators and the async runner"
+
+[dependencies]
+genesis-core.workspace = true
+genesis-edit.workspace = true
+genesis-llm.workspace = true
+anyhow.workspace = true
+async-trait.workspace = true
+futures.workspace = true
+rand.workspace = true
+rand_chacha.workspace = true
+regex.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+ephyra.workspace = true
+tempfile.workspace = true
